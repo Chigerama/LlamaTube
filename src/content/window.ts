@@ -50,7 +50,7 @@ const TEMPLATE = `
     <button type="button" class="btn pause" title="Pause" data-op="pause"><i></i></button>
     <button type="button" class="btn stop" title="Stop" data-op="stop"><i></i></button>
     <button type="button" class="btn next" title="Next" data-op="next"><i></i></button>
-    <button type="button" class="btn shuf" title="Shuffle" data-op="shuffle">SH</button>
+    <button type="button" class="btn shuf" title="Shuffle" data-op="shuffle" aria-label="Shuffle"><svg viewBox="0 0 10 8" aria-hidden="true"><path d="M0 1.5H3L7 6.5H10M0 6.5H3L7 1.5H10M8 0L10 1.5L8 3M8 5L10 6.5L8 8"/></svg></button>
   </div>
   <div class="seek" aria-label="Seek"><div class="fill"></div><div class="thumb"></div></div>
   <div class="volume" aria-label="Volume"><div class="fill"></div><div class="thumb"></div></div>
