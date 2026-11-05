@@ -164,6 +164,7 @@ const QUEUE = {
   item: 'ytmusic-player-queue-item',
   title: '.song-title',
   byline: '.byline',
+  play: 'ytmusic-play-button-renderer',
 } as const;
 
 /** Reads the queue rows from the page. `available` is false when none are rendered. */
@@ -182,7 +183,8 @@ export function readQueue(): QueueSnapshot {
 export function playQueueIndex(index: number): boolean {
   const row = document.querySelectorAll<HTMLElement>(QUEUE.item)[index];
   if (!row) return false;
-  pressElement(row.querySelector<HTMLElement>(QUEUE.title) ?? row);
+  // YTM attaches its play handlers to the play button in the thumbnail, not to the row or title.
+  pressElement(row.querySelector<HTMLElement>(QUEUE.play) ?? row.querySelector<HTMLElement>(QUEUE.title) ?? row);
   return true;
 }
 
