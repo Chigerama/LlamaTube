@@ -13,7 +13,8 @@
  *   context, the visualiser shows zeros and the audio plays normally.
  */
 
-const FFT_SIZE = 64; // gives 32 frequency bins
+const FFT_SIZE = 512; // 256 frequency bins: enough resolution at the bass end
+const BANDS = 64; // spectrum frames carry 64 bands, spaced evenly on a log (per-octave) scale
 
 let ctx: AudioContext | null = null;
 let analyser: AnalyserNode | null = null;
@@ -71,5 +72,15 @@ export function readBins(): { bins: number[]; silent: boolean } | null {
   analyser.getByteFrequencyData(buf);
   let sum = 0;
   for (const v of buf) sum += v;
-  return { bins: Array.from(buf), silent: sum === 0 };
+  // Group the linear FFT bins into log-spaced bands. Bin 0 is DC, so it is skipped.
+  const count = buf.length;
+  const bands: number[] = [];
+  for (let k = 0; k < BANDS; k++) {
+    const lo = Math.max(1, Math.floor(Math.pow(count, k / BANDS)));
+    const hi = Math.max(lo + 1, Math.floor(Math.pow(count, (k + 1) / BANDS)));
+    let peak = 0;
+    for (let j = lo; j < Math.min(hi, count); j++) peak = Math.max(peak, buf[j]);
+    bands.push(peak);
+  }
+  return { bins: bands, silent: sum === 0 };
 }
