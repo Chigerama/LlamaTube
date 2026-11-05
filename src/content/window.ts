@@ -213,7 +213,10 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
     popBtn?.classList.add('active');
     pipWin = pip;
     pip.addEventListener('resize', () => onPipResized(pip));
+    // Chrome's Picture-in-Picture windows cannot go fullscreen, so hide FS while popped out.
+    win.querySelector<HTMLButtonElement>('.fs')?.setAttribute('hidden', '');
     pip.addEventListener('pagehide', () => {
+      win.querySelector<HTMLButtonElement>('.fs')?.removeAttribute('hidden');
       shadow.append(win);
       win.style.zoom = String(settings.scale);
       delete host.dataset.popped;
