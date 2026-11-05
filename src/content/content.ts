@@ -23,8 +23,12 @@ if (!window.__ytampContent) {
 
   function log(state: PlaybackState): void {
     const track = state.track ? `${state.track.artist} - ${state.track.title}` : '(no track)';
+    // Time-only updates arrive ~4x/s during playback. A gap of more than 2 s
+    // between updates means a seek (or a jump), so it is logged explicitly.
+    const seeked = !!prev && Math.abs(state.currentTime - prev.currentTime) > 2;
     const changed =
       !prev ||
+      seeked ||
       prev.playing !== state.playing ||
       prev.volume !== state.volume ||
       prev.muted !== state.muted ||
@@ -32,8 +36,9 @@ if (!window.__ytampContent) {
       prev.track?.artist !== state.track?.artist ||
       prev.ready !== state.ready;
     if (changed) {
+      const label = seeked ? 'SEEK ' : state.playing ? 'PLAY ' : 'PAUSE';
       console.log(
-        `[YTAmp] ${state.playing ? 'PLAY ' : 'PAUSE'} | ${track} | ` +
+        `[YTAmp] ${label} | ${track} | ` +
           `${fmt(state.currentTime)} / ${fmt(state.duration)} | vol ${state.volume}` +
           `${state.muted ? ' (muted)' : ''} | ready=${state.ready}`,
       );
