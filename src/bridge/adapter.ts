@@ -179,13 +179,32 @@ function queueRows(): HTMLElement[] {
   return shown.length > 0 ? shown : all;
 }
 
+/** The video ID of a queue row, from the data YouTube Music attaches to it. */
+function rowVideoId(row: HTMLElement): string | null {
+  const id = (row as unknown as { data?: { videoId?: unknown } }).data?.videoId;
+  return typeof id === 'string' ? id : null;
+}
+
+/** The video ID the player is playing, or null when the player doesn't report one. */
+function currentVideoId(): string | null {
+  const player = findPlayer() as unknown as { getVideoData?: () => { video_id?: unknown } } | null;
+  const id = player?.getVideoData?.()?.video_id;
+  return typeof id === 'string' ? id : null;
+}
+
 export function readQueue(): QueueSnapshot {
   const rows = queueRows();
   if (rows.length === 0) return { available: false, items: [] };
+  const playingId = currentVideoId();
   const items = rows.slice(0, 200).map((row) => ({
     title: clip(row.querySelector(QUEUE.title)?.textContent?.trim() ?? ''),
     artist: clip(row.querySelector(QUEUE.byline)?.textContent?.trim() ?? ''),
-    current: row.hasAttribute('selected') || row.classList.contains('selected'),
+    // Match by video ID when both sides have one. The "selected" attribute can point at a
+    // different row than the one playing, so it is only a fallback.
+    current:
+      playingId !== null && rowVideoId(row) !== null
+        ? rowVideoId(row) === playingId
+        : row.hasAttribute('selected') || row.classList.contains('selected'),
   }));
   return { available: true, items };
 }
