@@ -9,10 +9,14 @@ export interface Settings {
   visible: boolean;
   /** Hide-YTM-UI mode: a dark cover sits behind the window. */
   hideUi: boolean;
+  /** Up-next panel height, in CSS pixels at 1x. */
+  plHeight: number;
 }
 
 const KEY = 'llamatubemusic.settings';
-const DEFAULTS: Settings = { x: 24, y: 24, scale: 1, visible: true, hideUi: false };
+export const MIN_PL_H = 48;
+export const MAX_PL_H = 300;
+const DEFAULTS: Settings = { x: 24, y: 24, scale: 1, visible: true, hideUi: false, plHeight: 120 };
 
 function sanitize(raw: unknown): Partial<Settings> {
   if (typeof raw !== 'object' || raw === null) return {};
@@ -23,6 +27,9 @@ function sanitize(raw: unknown): Partial<Settings> {
   if (r.scale === 1 || r.scale === 2) out.scale = r.scale;
   if (typeof r.visible === 'boolean') out.visible = r.visible;
   if (typeof r.hideUi === 'boolean') out.hideUi = r.hideUi;
+  if (typeof r.plHeight === 'number' && Number.isFinite(r.plHeight)) {
+    out.plHeight = Math.min(MAX_PL_H, Math.max(MIN_PL_H, r.plHeight));
+  }
   return out;
 }
 
