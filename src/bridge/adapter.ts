@@ -182,6 +182,19 @@ export function readQueue(): QueueSnapshot {
 export function playQueueIndex(index: number): boolean {
   const row = document.querySelectorAll<HTMLElement>(QUEUE.item)[index];
   if (!row) return false;
-  (row.querySelector<HTMLElement>(QUEUE.title) ?? row).click();
+  pressElement(row.querySelector<HTMLElement>(QUEUE.title) ?? row);
   return true;
+}
+
+/**
+ * Sends the full press sequence a user's tap produces. YTM's queue rows listen for
+ * pointer and mouse events, not only click, so a bare click() does nothing.
+ */
+function pressElement(el: HTMLElement): void {
+  const init = { bubbles: true, cancelable: true, composed: true, button: 0 };
+  el.dispatchEvent(new PointerEvent('pointerdown', { ...init, pointerId: 1, pointerType: 'mouse' }));
+  el.dispatchEvent(new MouseEvent('mousedown', init));
+  el.dispatchEvent(new PointerEvent('pointerup', { ...init, pointerId: 1, pointerType: 'mouse' }));
+  el.dispatchEvent(new MouseEvent('mouseup', init));
+  el.dispatchEvent(new MouseEvent('click', init));
 }
