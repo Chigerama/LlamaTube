@@ -32,6 +32,7 @@ type Send = (cmd: Command) => void;
 const TEMPLATE = `
   <div class="titlebar" part="titlebar">
     <span class="title">LLAMATUBEMUSIC</span>
+    <button class="vdbtn" type="button" title="Video">VD</button>
     <button class="plbtn" type="button" title="Up next">PL</button>
     <button class="popout" type="button" title="Pop out into a separate window">PIP</button>
     <button class="hideui" type="button" title="Hide YouTube Music behind the window">UI</button>
@@ -53,6 +54,11 @@ const TEMPLATE = `
   <div class="seek" aria-label="Seek"><div class="fill"></div><div class="thumb"></div></div>
   <div class="volume" aria-label="Volume"><div class="fill"></div><div class="thumb"></div></div>
   <div class="playlist" aria-label="Up next"></div>
+  <div class="video" aria-label="Video">
+    <video class="mirror" muted playsinline></video>
+    <div class="vd-empty">Video not available here.</div>
+    <button class="fs" type="button" title="Full screen">FS</button>
+  </div>
   <div class="pl-grip" title="Drag to resize the list"></div>
 `;
 
@@ -206,6 +212,7 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
     host.dataset.popped = 'true';
     popBtn?.classList.add('active');
     pipWin = pip;
+    pip.addEventListener('resize', () => onPipResized(pip));
     pip.addEventListener('pagehide', () => {
       shadow.append(win);
       win.style.zoom = String(settings.scale);
@@ -241,7 +248,7 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
     // A popped-out window needs its own height to match. Browsers may refuse the resize.
     if (pipWin) {
       try {
-        pipWin.resizeTo(BASE_W * settings.scale, (BASE_H + (open ? settings.plHeight : 0)) * settings.scale);
+        fitPipContent(pipWin, BASE_W * settings.scale, contentHeight() * settings.scale);
       } catch {
         console.warn('[LLamaTubeMusic] Could not resize the popped-out window.');
       }
@@ -281,19 +288,50 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
     });
   };
 
-  // ---- Resizable list: drag the corner grip. Height is remembered. ----
+  // ---- Resizable list: drag the corner grip, or resize the popped-out window. Height is remembered. ----
   const grip = win.querySelector<HTMLElement>('.pl-grip')!;
   win.style.setProperty('--pl-h', `${settings.plHeight}px`);
   let resizing: { startY: number; startH: number } | null = null;
 
-  const applyPlHeight = (h: number): void => {
+  /** Resizes a window so its content area is contentW x contentH. Chrome's frame is added on top. */
+  const fitPipContent = (p: Window, contentW: number, contentH: number): void => {
+    const frameW = p.outerWidth - p.innerWidth;
+    const frameH = p.outerHeight - p.innerHeight;
+    p.resizeTo(contentW + frameW, contentH + frameH);
+  };
+
+  /** Largest list height that fits. A popped-out window is sized by the user, so it is capped only by MAX_PL_H. */
+  const maxPlHeight = (): number => {
+    if (pipWin) return MAX_PL_H;
+    const hostTop = host.getBoundingClientRect().top;
+    return Math.min(MAX_PL_H, (window.innerHeight - hostTop) / settings.scale - BASE_H - (videoOpen ? VIDEO_H : 0));
+  };
+
+  const setPlHeight = (h: number): void => {
     settings.plHeight = h;
     win.style.setProperty('--pl-h', `${h}px`);
-    if (pipWin) {
-      try {
-        pipWin.resizeTo(BASE_W * settings.scale, (BASE_H + h) * settings.scale);
-      } catch {
-        // Browsers may refuse; the list still resizes in the page.
+    if (pipWin) fitPipContent(pipWin, BASE_W * settings.scale, contentHeight() * settings.scale);
+    void saveSettings(settings);
+  };
+
+  /**
+   * Keeps a popped-out window at least as large as its content, and makes the list
+   * fill whatever height the user gives the window.
+   */
+  const onPipResized = (p: Window): void => {
+    const s = settings.scale;
+    const minW = BASE_W * s;
+    const minH = (BASE_H + (videoOpen ? VIDEO_H : 0) + (playlistOpen ? MIN_PL_H : 0)) * s;
+    if (p.innerWidth < minW - 0.5 || p.innerHeight < minH - 0.5) {
+      fitPipContent(p, Math.max(p.innerWidth, minW), Math.max(p.innerHeight, minH));
+      return;
+    }
+    if (playlistOpen) {
+      const h = Math.round(p.innerHeight / s - BASE_H - (videoOpen ? VIDEO_H : 0));
+      if (h !== settings.plHeight) {
+        settings.plHeight = h;
+        win.style.setProperty('--pl-h', `${h}px`);
+        void saveSettings(settings);
       }
     }
   };
@@ -309,26 +347,94 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
     if (!resizing) return;
     // Pointer movement is in viewport pixels; the window is scaled by settings.scale.
     const dy = (e.clientY - resizing.startY) / settings.scale;
-    // Keep the bottom of the window on screen.
-    const hostTop = host.getBoundingClientRect().top;
-    const fitH = (window.innerHeight - hostTop) / settings.scale - BASE_H;
-    const h = Math.round(Math.min(Math.max(resizing.startH + dy, MIN_PL_H), Math.min(MAX_PL_H, fitH)));
+    const h = Math.round(Math.min(Math.max(resizing.startH + dy, MIN_PL_H), maxPlHeight()));
     win.style.setProperty('--pl-h', `${h}px`);
   });
   const finishResize = (e: PointerEvent): void => {
     if (!resizing) return;
     const dy = (e.clientY - resizing.startY) / settings.scale;
-    const hostTop = host.getBoundingClientRect().top;
-    const fitH = (window.innerHeight - hostTop) / settings.scale - BASE_H;
-    const h = Math.round(Math.min(Math.max(resizing.startH + dy, MIN_PL_H), Math.min(MAX_PL_H, fitH)));
+    const h = Math.round(Math.min(Math.max(resizing.startH + dy, MIN_PL_H), maxPlHeight()));
     resizing = null;
-    applyPlHeight(h);
-    void saveSettings(settings);
+    setPlHeight(h);
   };
   grip.addEventListener('pointerup', finishResize);
   grip.addEventListener('pointercancel', () => {
     resizing = null;
     win.style.setProperty('--pl-h', `${settings.plHeight}px`);
+  });
+
+  // ---- Video panel: a muted mirror of YouTube Music's video, with full screen. ----
+  // The mirror uses captureStream(), so YouTube Music keeps the audio and its player is untouched.
+  const VIDEO_H = 155; // 16:9 at 275 px wide
+  const vdBtn = win.querySelector<HTMLButtonElement>('.vdbtn');
+  const mirror = win.querySelector<HTMLVideoElement>('.mirror')!;
+  const vdEmpty = win.querySelector<HTMLElement>('.vd-empty')!;
+  const fsBtn = win.querySelector<HTMLButtonElement>('.fs');
+  let videoOpen = false;
+
+  /** Height of the window's content area: the window, plus the video and list when open. */
+  const contentHeight = (): number =>
+    BASE_H + (videoOpen ? VIDEO_H : 0) + (playlistOpen ? settings.plHeight : 0);
+
+  type Capturable = HTMLVideoElement & { captureStream?: () => MediaStream };
+
+  const attachMirror = (): void => {
+    const source = document.querySelector<Capturable>('video');
+    if (!source || typeof source.captureStream !== 'function') {
+      mirror.hidden = true;
+      vdEmpty.hidden = false;
+      return;
+    }
+    try {
+      mirror.srcObject = source.captureStream();
+      mirror.hidden = false;
+      vdEmpty.hidden = true;
+      void mirror.play().catch(() => undefined);
+    } catch {
+      mirror.hidden = true;
+      vdEmpty.hidden = false;
+    }
+  };
+
+  const setVideoOpen = (open: boolean): void => {
+    videoOpen = open;
+    win.classList.toggle('video-open', open);
+    vdBtn?.classList.toggle('active', open);
+    win.style.setProperty('--vd-h', open ? `${VIDEO_H}px` : '0px');
+    if (open) {
+      attachMirror();
+    } else {
+      if (mirror.ownerDocument.fullscreenElement) void mirror.ownerDocument.exitFullscreen();
+      mirror.pause();
+      mirror.srcObject = null;
+    }
+    if (pipWin) {
+      try {
+        fitPipContent(pipWin, BASE_W * settings.scale, contentHeight() * settings.scale);
+      } catch {
+        console.warn('[LLamaTubeMusic] Could not resize the popped-out window.');
+      }
+    }
+  };
+
+  vdBtn?.addEventListener('click', () => setVideoOpen(!videoOpen));
+
+  // The source element can be replaced between songs, so re-attach the mirror when media loads.
+  for (const type of ['loadedmetadata', 'emptied'] as const) {
+    document.addEventListener(type, () => {
+      if (videoOpen) attachMirror();
+    }, true);
+  }
+
+  fsBtn?.addEventListener('click', () => {
+    const doc = mirror.ownerDocument;
+    if (doc.fullscreenElement) {
+      void doc.exitFullscreen();
+    } else {
+      mirror.requestFullscreen().catch(() => {
+        console.warn('[LLamaTubeMusic] Full screen was refused.');
+      });
+    }
   });
 
   return {
