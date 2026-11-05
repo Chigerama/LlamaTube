@@ -302,6 +302,20 @@
   opacity: 0.3;
 }
 
+/* ---- In-app close button ---- */
+.close {
+  font: 700 11px/1 monospace;
+  width: 16px;
+  height: 10px;
+  padding: 0;
+  margin-right: 2px;
+  color: var(--ytamp-text);
+  background: var(--ytamp-face);
+  border: 1px solid var(--ytamp-bevel-lo);
+  box-shadow: inset 1px 1px 0 var(--ytamp-bevel-hi);
+  cursor: pointer;
+}
+
 /* ---- Pop-out button ---- */
 .popout {
   font: 700 8px/1 monospace;

@@ -33,6 +33,7 @@ const TEMPLATE = `
     <button class="popout" type="button" title="Pop out into a separate window">PIP</button>
     <button class="hideui" type="button" title="Hide YouTube Music behind the window">UI</button>
     <button class="scale" type="button" title="Toggle 2x size">2x</button>
+    <button class="close" type="button" title="Hide LLamaTubeMusic">×</button>
   </div>
   <div class="lcd" title="Click to switch elapsed and remaining time">
     <span class="time">0:00</span>
@@ -188,6 +189,7 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
     }
     const pip = await pipApi.requestWindow({ width: BASE_W * settings.scale, height: BASE_H * settings.scale });
     const doc = pip.document;
+    doc.title = 'LLamaTubeMusic';
     doc.body.style.cssText = 'margin:0;background:#000;overflow:hidden';
     const pipHost = doc.createElement('div');
     doc.body.append(pipHost);
@@ -213,10 +215,20 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
   // Closing the YouTube Music tab also closes the popped window, since the bridge is gone.
   window.addEventListener('pagehide', () => pipWin?.close());
 
+  // In-app close button: hides the window, like the shortcut. Closes the popped window too.
+  win.querySelector<HTMLButtonElement>('.close')?.addEventListener('click', () => {
+    settings.visible = false;
+    applyVisibility();
+    void saveSettings(settings);
+    pipWin?.close();
+  });
+
   return {
     toggleVisible(): void {
       settings.visible = !settings.visible;
       applyVisibility();
+      // Hiding while popped out closes the popped window; it returns to the page, hidden.
+      if (!settings.visible) pipWin?.close();
       void saveSettings(settings);
     },
     spectrum(bins: number[], silent: boolean): void {
