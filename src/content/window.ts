@@ -119,7 +119,11 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
   // Dark cover for hide-UI mode. It sits inside the host, so hiding the host hides it too.
   const veil = document.createElement('div');
   veil.className = 'veil';
-  shadow.append(style, veil, win);
+  // Full-viewport video for the fullscreen view. It shares the mirror's stream.
+  const fsView = document.createElement('div');
+  fsView.className = 'fsview';
+  fsView.innerHTML = '<video class="fs-mirror" muted playsinline></video>';
+  shadow.append(style, veil, fsView, win);
   document.documentElement.append(host);
 
   const q = <T extends HTMLElement>(sel: string) => win.querySelector<T>(sel)!;
@@ -387,6 +391,7 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
     }
     try {
       mirror.srcObject = source.captureStream();
+      if (fullscreenView) fsMirror.srcObject = mirror.srcObject;
       mirror.hidden = false;
       vdEmpty.hidden = true;
       void mirror.play().catch(() => undefined);
@@ -405,6 +410,7 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
       attachMirror();
     } else {
       if (mirror.ownerDocument.fullscreenElement) void mirror.ownerDocument.exitFullscreen();
+      if (fullscreenView) setFullscreenView(false);
       mirror.pause();
       mirror.srcObject = null;
     }
@@ -426,16 +432,35 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
     }, true);
   }
 
-  fsBtn?.addEventListener('click', () => {
-    const doc = mirror.ownerDocument;
-    if (doc.fullscreenElement) {
-      void doc.exitFullscreen();
-    } else {
-      mirror.requestFullscreen().catch(() => {
-        console.warn('[LLamaTubeMusic] Full screen was refused.');
-      });
+  // ---- Fullscreen view: a full-viewport copy of the video, with the browser window fullscreen. ----
+  // The popped-out window can't go fullscreen itself, and a page can't fullscreen another
+  // tab, so this works through the extension: the background sets the tab's window to fullscreen.
+  let fullscreenView = false;
+  const fsOverlay = shadow.querySelector<HTMLElement>('.fsview')!;
+  const fsMirror = fsView.querySelector<HTMLVideoElement>('.fs-mirror')!;
+
+  const setFullscreenView = (on: boolean): void => {
+    if (on && !videoOpen) setVideoOpen(true);
+    fullscreenView = on;
+    fsOverlay.classList.toggle('on', on);
+    fsMirror.srcObject = on ? mirror.srcObject : null;
+    if (on) void fsMirror.play().catch(() => undefined);
+    // Guarded: the page-only test harness has no extension APIs.
+    if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
+      void chrome.runtime
+        .sendMessage({ type: 'llamatubemusic:window-fullscreen', on })
+        .catch(() => undefined);
     }
-  });
+  };
+
+  fsBtn?.addEventListener('click', () => setFullscreenView(!fullscreenView));
+  document.addEventListener(
+    'keydown',
+    (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && fullscreenView) setFullscreenView(false);
+    },
+    true,
+  );
 
   return {
     queue(snapshot: QueueSnapshot): void {

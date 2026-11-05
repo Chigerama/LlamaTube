@@ -179,11 +179,21 @@ export function readQueue(): QueueSnapshot {
   return { available: true, items };
 }
 
-/** Plays the queue row at `index` by clicking it, the same path YTM's own UI uses. */
+/**
+ * Plays the queue row at `index`. Prefers the player's loadVideoById with the row's
+ * video ID, which is exact even when two rows share a title. Falls back to a press
+ * on the row's play button if the player doesn't offer it.
+ */
 export function playQueueIndex(index: number): boolean {
-  const row = document.querySelectorAll<HTMLElement>(QUEUE.item)[index];
+  const rows = document.querySelectorAll<HTMLElement>(QUEUE.item);
+  const row = rows[index];
   if (!row) return false;
-  // YTM attaches its play handlers to the play button in the thumbnail, not to the row or title.
+  const player = findPlayer() as (PlayerApi & { loadVideoById?: (id: string) => void }) | null;
+  const videoId = (row as unknown as { data?: { videoId?: unknown } }).data?.videoId;
+  if (player?.loadVideoById && typeof videoId === 'string') {
+    player.loadVideoById(videoId);
+    return true;
+  }
   pressElement(row.querySelector<HTMLElement>(QUEUE.play) ?? row.querySelector<HTMLElement>(QUEUE.title) ?? row);
   return true;
 }
