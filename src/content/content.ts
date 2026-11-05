@@ -3,6 +3,7 @@
  * The Shadow DOM window arrives in Phase 2.
  */
 import { NS, parseMessage, post, type PlaybackState } from '../shared/protocol';
+import { mountWindow } from './window';
 
 declare global {
   interface Window {
@@ -53,5 +54,6 @@ if (!window.__ytampContent) {
   });
 
   post({ ns: NS, kind: 'hello' });
-  console.log('[YTAmp] content script loaded (Phase 1: console only)');
+  void mountWindow();
+  console.log('[YTAmp] content script loaded (Phase 2: static window)');
 }

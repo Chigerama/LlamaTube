@@ -3,6 +3,7 @@
   "name": "YTAmp",
   "version": "0.1.0",
   "description": "Winamp-style overlay for YouTube Music. Controls YTM playback; it does not replace it.",
+  "permissions": ["storage"],
   "host_permissions": ["https://music.youtube.com/*"],
   "content_scripts": [
     {

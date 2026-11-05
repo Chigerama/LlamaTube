@@ -1,0 +1,257 @@
+/*
+ * YTAmp skin. Original artwork only: no Winamp bitmaps.
+ * Colours are tokens on :host so a future skin can redefine them, or
+ * swap the backgrounds for sprite-sheet positions.
+ */
+:host {
+  --ytamp-face: #2b2c31;
+  --ytamp-face-hi: #4a4c55;
+  --ytamp-face-lo: #17181c;
+  --ytamp-bevel-hi: #6b6e79;
+  --ytamp-bevel-lo: #0b0b0d;
+  --ytamp-lcd-bg: #07100a;
+  --ytamp-lcd-fg: #58f07a;
+  --ytamp-lcd-dim: #1d3a25;
+  --ytamp-accent: #8fd4ff;
+  --ytamp-text: #c9ccd6;
+
+  all: initial;
+  position: fixed;
+  z-index: 2147483000;
+  font-family: system-ui, sans-serif;
+  color: var(--ytamp-text);
+  user-select: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.win {
+  position: relative;
+  width: 275px;
+  height: 116px;
+  padding: 0;
+  background: linear-gradient(180deg, var(--ytamp-face-hi), var(--ytamp-face) 40%, var(--ytamp-face-lo));
+  border: 1px solid var(--ytamp-bevel-lo);
+  box-shadow:
+    inset 1px 1px 0 var(--ytamp-bevel-hi),
+    inset -1px -1px 0 var(--ytamp-bevel-lo);
+  overflow: hidden;
+}
+
+/* ---- Title bar (also the drag handle) ---- */
+.titlebar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 275px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px;
+  background: linear-gradient(90deg, #3c3f4a, #1e2028);
+  cursor: move;
+  touch-action: none;
+}
+
+.title {
+  font: 700 9px/1 monospace;
+  letter-spacing: 2px;
+  color: var(--ytamp-accent);
+}
+
+.scale {
+  font: 700 8px/1 monospace;
+  width: 22px;
+  height: 10px;
+  padding: 0;
+  color: var(--ytamp-text);
+  background: var(--ytamp-face);
+  border: 1px solid var(--ytamp-bevel-lo);
+  box-shadow: inset 1px 1px 0 var(--ytamp-bevel-hi);
+  cursor: pointer;
+}
+
+/* ---- LCD: time readout and track line ---- */
+.lcd {
+  position: absolute;
+  left: 8px;
+  top: 20px;
+  width: 96px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 4px;
+  background: var(--ytamp-lcd-bg);
+  border: 1px solid var(--ytamp-bevel-lo);
+}
+
+.time {
+  font: 700 18px/1 monospace;
+  letter-spacing: 1px;
+  color: var(--ytamp-lcd-fg);
+  text-shadow: 0 0 4px rgba(88, 240, 122, 0.45);
+}
+
+.track {
+  position: absolute;
+  left: 8px;
+  top: 46px;
+  width: 259px;
+  height: 12px;
+  overflow: hidden;
+  background: var(--ytamp-lcd-bg);
+  border: 1px solid var(--ytamp-bevel-lo);
+  font: 9px/10px monospace;
+  color: var(--ytamp-lcd-fg);
+  padding: 0 3px;
+  white-space: nowrap;
+}
+
+/* ---- Spectrum placeholder (Phase 4 replaces it) ---- */
+.spectrum {
+  position: absolute;
+  left: 112px;
+  top: 20px;
+  width: 155px;
+  height: 22px;
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+  padding: 2px;
+  background: var(--ytamp-lcd-bg);
+  border: 1px solid var(--ytamp-bevel-lo);
+}
+
+.spectrum i {
+  flex: 1;
+  background: linear-gradient(0deg, #2fbf57, #e8e04a 70%, #ff5a5a);
+}
+
+/* ---- Transport buttons, drawn with CSS ---- */
+.transport {
+  position: absolute;
+  left: 8px;
+  top: 62px;
+  display: flex;
+  gap: 2px;
+}
+
+.btn {
+  position: relative;
+  width: 24px;
+  height: 18px;
+  padding: 0;
+  background: linear-gradient(180deg, var(--ytamp-face-hi), var(--ytamp-face-lo));
+  border: 1px solid var(--ytamp-bevel-lo);
+  box-shadow: inset 1px 1px 0 var(--ytamp-bevel-hi);
+  cursor: pointer;
+}
+
+.btn:active {
+  background: var(--ytamp-face-lo);
+  box-shadow: inset 1px 1px 0 var(--ytamp-bevel-lo);
+}
+
+.btn i {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 0;
+  height: 0;
+}
+
+.prev i {
+  border-style: solid;
+  border-width: 4px 5px 4px 0;
+  border-color: transparent var(--ytamp-text) transparent transparent;
+  margin-left: -2px;
+}
+
+.play i {
+  border-style: solid;
+  border-width: 4px 0 4px 7px;
+  border-color: transparent transparent transparent var(--ytamp-accent);
+  margin-left: 1px;
+}
+
+.pause i {
+  width: 6px;
+  height: 7px;
+  border-left: 2px solid var(--ytamp-text);
+  border-right: 2px solid var(--ytamp-text);
+  box-sizing: content-box;
+}
+
+.stop i {
+  width: 7px;
+  height: 7px;
+  background: var(--ytamp-text);
+}
+
+.next i {
+  border-style: solid;
+  border-width: 4px 0 4px 5px;
+  border-color: transparent transparent transparent var(--ytamp-text);
+  margin-left: 2px;
+}
+
+/* ---- Seek and volume sliders (static in Phase 2) ---- */
+.seek,
+.volume {
+  position: absolute;
+  height: 6px;
+  background: var(--ytamp-lcd-bg);
+  border: 1px solid var(--ytamp-bevel-lo);
+}
+
+.seek {
+  left: 8px;
+  top: 88px;
+  width: 259px;
+}
+
+.volume {
+  left: 146px;
+  top: 66px;
+  width: 121px;
+  height: 6px;
+}
+
+.fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, #2f7d4a, var(--ytamp-lcd-fg));
+}
+
+.seek .fill {
+  width: 0;
+}
+
+.volume .fill {
+  width: 100%;
+}
+
+.thumb {
+  position: absolute;
+  top: -4px;
+  width: 6px;
+  height: 12px;
+  background: linear-gradient(180deg, var(--ytamp-face-hi), var(--ytamp-face-lo));
+  border: 1px solid var(--ytamp-bevel-lo);
+  box-shadow: inset 1px 1px 0 var(--ytamp-bevel-hi);
+}
+
+.seek .thumb {
+  left: 0;
+}
+
+.volume .thumb {
+  right: 0;
+}
