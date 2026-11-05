@@ -168,8 +168,19 @@ const QUEUE = {
 } as const;
 
 /** Reads the queue rows from the page. `available` is false when none are rendered. */
+/**
+ * The rows to show and to index. YouTube Music keeps hidden copies of queue rows, and
+ * they duplicate what the panel shows. When the panel is open, only visible rows count.
+ * When it's closed every row is hidden, so all rows are used.
+ */
+function queueRows(): HTMLElement[] {
+  const all = Array.from(document.querySelectorAll<HTMLElement>(QUEUE.item));
+  const shown = all.filter((row) => row.offsetParent !== null);
+  return shown.length > 0 ? shown : all;
+}
+
 export function readQueue(): QueueSnapshot {
-  const rows = Array.from(document.querySelectorAll<HTMLElement>(QUEUE.item));
+  const rows = queueRows();
   if (rows.length === 0) return { available: false, items: [] };
   const items = rows.slice(0, 200).map((row) => ({
     title: clip(row.querySelector(QUEUE.title)?.textContent?.trim() ?? ''),
@@ -185,8 +196,7 @@ export function readQueue(): QueueSnapshot {
  * on the row's play button if the player doesn't offer it.
  */
 export function playQueueIndex(index: number): boolean {
-  const rows = document.querySelectorAll<HTMLElement>(QUEUE.item);
-  const row = rows[index];
+  const row = queueRows()[index];
   if (!row) return false;
   const player = findPlayer() as (PlayerApi & { loadVideoById?: (id: string) => void }) | null;
   const videoId = (row as unknown as { data?: { videoId?: unknown } }).data?.videoId;
