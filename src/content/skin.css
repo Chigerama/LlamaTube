@@ -1,25 +1,25 @@
 /*
- * YTAmp skin. Original artwork only: no Winamp bitmaps.
+ * LLamaTubeMusic skin. Original artwork only: no Winamp bitmaps.
  * Colours are tokens on :host so a future skin can redefine them, or
  * swap the backgrounds for sprite-sheet positions.
  */
 :host {
-  --ytamp-face: #2b2c31;
-  --ytamp-face-hi: #4a4c55;
-  --ytamp-face-lo: #17181c;
-  --ytamp-bevel-hi: #6b6e79;
-  --ytamp-bevel-lo: #0b0b0d;
-  --ytamp-lcd-bg: #07100a;
-  --ytamp-lcd-fg: #58f07a;
-  --ytamp-lcd-dim: #1d3a25;
-  --ytamp-accent: #8fd4ff;
-  --ytamp-text: #c9ccd6;
+  --llamatubemusic-face: #2b2c31;
+  --llamatubemusic-face-hi: #4a4c55;
+  --llamatubemusic-face-lo: #17181c;
+  --llamatubemusic-bevel-hi: #6b6e79;
+  --llamatubemusic-bevel-lo: #0b0b0d;
+  --llamatubemusic-lcd-bg: #07100a;
+  --llamatubemusic-lcd-fg: #58f07a;
+  --llamatubemusic-lcd-dim: #1d3a25;
+  --llamatubemusic-accent: #8fd4ff;
+  --llamatubemusic-text: #c9ccd6;
 
   all: initial;
   position: fixed;
   z-index: 2147483000;
   font-family: system-ui, sans-serif;
-  color: var(--ytamp-text);
+  color: var(--llamatubemusic-text);
   user-select: none;
 }
 
@@ -32,11 +32,11 @@
   width: 275px;
   height: 116px;
   padding: 0;
-  background: linear-gradient(180deg, var(--ytamp-face-hi), var(--ytamp-face) 40%, var(--ytamp-face-lo));
-  border: 1px solid var(--ytamp-bevel-lo);
+  background: linear-gradient(180deg, var(--llamatubemusic-face-hi), var(--llamatubemusic-face) 40%, var(--llamatubemusic-face-lo));
+  border: 1px solid var(--llamatubemusic-bevel-lo);
   box-shadow:
-    inset 1px 1px 0 var(--ytamp-bevel-hi),
-    inset -1px -1px 0 var(--ytamp-bevel-lo);
+    inset 1px 1px 0 var(--llamatubemusic-bevel-hi),
+    inset -1px -1px 0 var(--llamatubemusic-bevel-lo);
   overflow: hidden;
 }
 
@@ -59,7 +59,7 @@
 .title {
   font: 700 9px/1 monospace;
   letter-spacing: 2px;
-  color: var(--ytamp-accent);
+  color: var(--llamatubemusic-accent);
 }
 
 .scale {
@@ -67,10 +67,10 @@
   width: 22px;
   height: 10px;
   padding: 0;
-  color: var(--ytamp-text);
-  background: var(--ytamp-face);
-  border: 1px solid var(--ytamp-bevel-lo);
-  box-shadow: inset 1px 1px 0 var(--ytamp-bevel-hi);
+  color: var(--llamatubemusic-text);
+  background: var(--llamatubemusic-face);
+  border: 1px solid var(--llamatubemusic-bevel-lo);
+  box-shadow: inset 1px 1px 0 var(--llamatubemusic-bevel-hi);
   cursor: pointer;
 }
 
@@ -85,14 +85,14 @@
   align-items: center;
   justify-content: flex-end;
   padding: 0 4px;
-  background: var(--ytamp-lcd-bg);
-  border: 1px solid var(--ytamp-bevel-lo);
+  background: var(--llamatubemusic-lcd-bg);
+  border: 1px solid var(--llamatubemusic-bevel-lo);
 }
 
 .time {
   font: 700 18px/1 monospace;
   letter-spacing: 1px;
-  color: var(--ytamp-lcd-fg);
+  color: var(--llamatubemusic-lcd-fg);
   text-shadow: 0 0 4px rgba(88, 240, 122, 0.45);
 }
 
@@ -103,10 +103,10 @@
   width: 259px;
   height: 12px;
   overflow: hidden;
-  background: var(--ytamp-lcd-bg);
-  border: 1px solid var(--ytamp-bevel-lo);
+  background: var(--llamatubemusic-lcd-bg);
+  border: 1px solid var(--llamatubemusic-bevel-lo);
   font: 9px/10px monospace;
-  color: var(--ytamp-lcd-fg);
+  color: var(--llamatubemusic-lcd-fg);
   padding: 0 3px;
   white-space: nowrap;
 }
@@ -122,8 +122,8 @@
   align-items: flex-end;
   gap: 1px;
   padding: 2px;
-  background: var(--ytamp-lcd-bg);
-  border: 1px solid var(--ytamp-bevel-lo);
+  background: var(--llamatubemusic-lcd-bg);
+  border: 1px solid var(--llamatubemusic-bevel-lo);
 }
 
 .spectrum i {
@@ -145,15 +145,15 @@
   width: 24px;
   height: 18px;
   padding: 0;
-  background: linear-gradient(180deg, var(--ytamp-face-hi), var(--ytamp-face-lo));
-  border: 1px solid var(--ytamp-bevel-lo);
-  box-shadow: inset 1px 1px 0 var(--ytamp-bevel-hi);
+  background: linear-gradient(180deg, var(--llamatubemusic-face-hi), var(--llamatubemusic-face-lo));
+  border: 1px solid var(--llamatubemusic-bevel-lo);
+  box-shadow: inset 1px 1px 0 var(--llamatubemusic-bevel-hi);
   cursor: pointer;
 }
 
 .btn:active {
-  background: var(--ytamp-face-lo);
-  box-shadow: inset 1px 1px 0 var(--ytamp-bevel-lo);
+  background: var(--llamatubemusic-face-lo);
+  box-shadow: inset 1px 1px 0 var(--llamatubemusic-bevel-lo);
 }
 
 .btn i {
@@ -168,35 +168,35 @@
 .prev i {
   border-style: solid;
   border-width: 4px 5px 4px 0;
-  border-color: transparent var(--ytamp-text) transparent transparent;
+  border-color: transparent var(--llamatubemusic-text) transparent transparent;
   margin-left: -2px;
 }
 
 .play i {
   border-style: solid;
   border-width: 4px 0 4px 7px;
-  border-color: transparent transparent transparent var(--ytamp-accent);
+  border-color: transparent transparent transparent var(--llamatubemusic-accent);
   margin-left: 1px;
 }
 
 .pause i {
   width: 6px;
   height: 7px;
-  border-left: 2px solid var(--ytamp-text);
-  border-right: 2px solid var(--ytamp-text);
+  border-left: 2px solid var(--llamatubemusic-text);
+  border-right: 2px solid var(--llamatubemusic-text);
   box-sizing: content-box;
 }
 
 .stop i {
   width: 7px;
   height: 7px;
-  background: var(--ytamp-text);
+  background: var(--llamatubemusic-text);
 }
 
 .next i {
   border-style: solid;
   border-width: 4px 0 4px 5px;
-  border-color: transparent transparent transparent var(--ytamp-text);
+  border-color: transparent transparent transparent var(--llamatubemusic-text);
   margin-left: 2px;
 }
 
@@ -205,8 +205,8 @@
 .volume {
   position: absolute;
   height: 6px;
-  background: var(--ytamp-lcd-bg);
-  border: 1px solid var(--ytamp-bevel-lo);
+  background: var(--llamatubemusic-lcd-bg);
+  border: 1px solid var(--llamatubemusic-bevel-lo);
 }
 
 .seek {
@@ -227,7 +227,7 @@
   left: 0;
   top: 0;
   bottom: 0;
-  background: linear-gradient(90deg, #2f7d4a, var(--ytamp-lcd-fg));
+  background: linear-gradient(90deg, #2f7d4a, var(--llamatubemusic-lcd-fg));
 }
 
 .seek .fill {
@@ -243,9 +243,9 @@
   top: -4px;
   width: 6px;
   height: 12px;
-  background: linear-gradient(180deg, var(--ytamp-face-hi), var(--ytamp-face-lo));
-  border: 1px solid var(--ytamp-bevel-lo);
-  box-shadow: inset 1px 1px 0 var(--ytamp-bevel-hi);
+  background: linear-gradient(180deg, var(--llamatubemusic-face-hi), var(--llamatubemusic-face-lo));
+  border: 1px solid var(--llamatubemusic-bevel-lo);
+  box-shadow: inset 1px 1px 0 var(--llamatubemusic-bevel-hi);
 }
 
 .seek .thumb {
@@ -269,8 +269,8 @@
 }
 
 .btn.active {
-  background: linear-gradient(180deg, var(--ytamp-lcd-dim), var(--ytamp-lcd-bg));
-  box-shadow: inset 1px 1px 0 var(--ytamp-bevel-lo);
+  background: linear-gradient(180deg, var(--llamatubemusic-lcd-dim), var(--llamatubemusic-lcd-bg));
+  box-shadow: inset 1px 1px 0 var(--llamatubemusic-bevel-lo);
 }
 
 .marquee {
@@ -279,10 +279,10 @@
 }
 
 .marquee.scroll {
-  animation: ytamp-marquee 12s linear infinite;
+  animation: llamatubemusic-marquee 12s linear infinite;
 }
 
-@keyframes ytamp-marquee {
+@keyframes llamatubemusic-marquee {
   from {
     transform: translateX(0);
   }

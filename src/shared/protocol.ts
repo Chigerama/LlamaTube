@@ -7,7 +7,7 @@
  * must run parseMessage() and drop anything that fails validation.
  */
 
-export const NS = 'ytamp:v1' as const;
+export const NS = 'llamatubemusic:v1' as const;
 
 export interface TrackInfo {
   title: string;
@@ -93,7 +93,7 @@ function isCommand(x: unknown): x is Command {
   }
 }
 
-/** Returns a typed message, or null if the data is not a valid ytamp message. */
+/** Returns a typed message, or null if the data is not a valid llamatubemusic message. */
 export function parseMessage(data: unknown): Message | null {
   if (!isObj(data) || data.ns !== NS || !isStr(data.kind)) return null;
   switch (data.kind) {

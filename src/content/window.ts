@@ -10,7 +10,7 @@ import css from './skin.css';
 import { loadSettings, saveSettings, type Settings } from '../shared/settings';
 import type { Command, PlaybackState } from '../shared/protocol';
 
-const HOST_ID = 'ytamp-host';
+const HOST_ID = 'llamatubemusic-host';
 const BASE_W = 275;
 const BASE_H = 116;
 const SPECTRUM_BARS = 14;
@@ -25,7 +25,7 @@ type Send = (cmd: Command) => void;
 
 const TEMPLATE = `
   <div class="titlebar" part="titlebar">
-    <span class="title">YTAMP</span>
+    <span class="title">LLAMATUBEMUSIC</span>
     <button class="scale" type="button" title="Toggle 2x size">2x</button>
   </div>
   <div class="lcd" title="Click to switch elapsed and remaining time">

@@ -7,12 +7,12 @@ import { mountWindow, type WindowHandle } from './window';
 
 declare global {
   interface Window {
-    __ytampContent?: boolean;
+    __llamatubemusicContent?: boolean;
   }
 }
 
-if (!window.__ytampContent) {
-  window.__ytampContent = true;
+if (!window.__llamatubemusicContent) {
+  window.__llamatubemusicContent = true;
 
   let prev: PlaybackState | null = null;
 
@@ -39,7 +39,7 @@ if (!window.__ytampContent) {
     if (changed) {
       const label = seeked ? 'SEEK ' : state.playing ? 'PLAY ' : 'PAUSE';
       console.log(
-        `[YTAmp] ${label} | ${track} | ` +
+        `[LLamaTubeMusic] ${label} | ${track} | ` +
           `${fmt(state.currentTime)} / ${fmt(state.duration)} | vol ${state.volume}` +
           `${state.muted ? ' (muted)' : ''} | ready=${state.ready}`,
       );
@@ -71,5 +71,5 @@ if (!window.__ytampContent) {
   });
 
   post({ ns: NS, kind: 'hello' });
-  console.log('[YTAmp] content script loaded (Phase 3: controls wired)');
+  console.log('[LLamaTubeMusic] content script loaded (Phase 3: controls wired)');
 }

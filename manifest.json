@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "YTAmp",
+  "name": "LLamaTubeMusic",
   "version": "0.1.0",
   "description": "Winamp-style overlay for YouTube Music. Controls YTM playback; it does not replace it.",
   "permissions": ["storage"],

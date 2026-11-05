@@ -8,12 +8,12 @@ import { readState, runCommand } from './adapter';
 
 declare global {
   interface Window {
-    __ytampBridge?: boolean;
+    __llamatubemusicBridge?: boolean;
   }
 }
 
-if (!window.__ytampBridge) {
-  window.__ytampBridge = true;
+if (!window.__llamatubemusicBridge) {
+  window.__llamatubemusicBridge = true;
 
   const MEDIA_EVENTS = [
     'play',

@@ -7,7 +7,7 @@ export interface Settings {
   scale: 1 | 2;
 }
 
-const KEY = 'ytamp.settings';
+const KEY = 'llamatubemusic.settings';
 const DEFAULTS: Settings = { x: 24, y: 24, scale: 1 };
 
 function sanitize(raw: unknown): Partial<Settings> {
