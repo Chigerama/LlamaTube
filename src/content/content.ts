@@ -2,17 +2,17 @@
  * Isolated-world content script. Phase 1: logs bridge state to the console.
  * The Shadow DOM window arrives in Phase 2.
  */
-import { NS, parseMessage, post, type PlaybackState } from '../shared/protocol';
-import { mountWindow } from './window';
+import { NS, parseMessage, post, type Command, type PlaybackState } from '../shared/protocol';
+import { mountWindow, type WindowHandle } from './window';
 
 declare global {
   interface Window {
-    __ytampContent?: boolean;
+    __llamatubemusicContent?: boolean;
   }
 }
 
-if (!window.__ytampContent) {
-  window.__ytampContent = true;
+if (!window.__llamatubemusicContent) {
+  window.__llamatubemusicContent = true;
 
   let prev: PlaybackState | null = null;
 
@@ -39,7 +39,7 @@ if (!window.__ytampContent) {
     if (changed) {
       const label = seeked ? 'SEEK ' : state.playing ? 'PLAY ' : 'PAUSE';
       console.log(
-        `[YTAmp] ${label} | ${track} | ` +
+        `[LLamaTubeMusic] ${label} | ${track} | ` +
           `${fmt(state.currentTime)} / ${fmt(state.duration)} | vol ${state.volume}` +
           `${state.muted ? ' (muted)' : ''} | ready=${state.ready}`,
       );
@@ -53,7 +53,23 @@ if (!window.__ytampContent) {
     if (msg?.kind === 'state') log(msg.payload);
   });
 
+  // The window is a view: it renders state and sends commands through `send`.
+  const send = (cmd: Command): void => post({ ns: NS, kind: 'cmd', payload: cmd });
+  let handle: WindowHandle | null = null;
+  let latest: PlaybackState | null = null;
+  void mountWindow(send).then((h) => {
+    handle = h;
+    if (h && latest) h.update(latest);
+  });
+
+  window.addEventListener('message', (e: MessageEvent) => {
+    if (e.source !== window) return;
+    const msg = parseMessage(e.data);
+    if (msg?.kind !== 'state') return;
+    latest = msg.payload;
+    handle?.update(msg.payload);
+  });
+
   post({ ns: NS, kind: 'hello' });
-  void mountWindow();
-  console.log('[YTAmp] content script loaded (Phase 2: static window)');
+  console.log('[LLamaTubeMusic] content script loaded (Phase 3: controls wired)');
 }

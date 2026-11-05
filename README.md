@@ -1,7 +1,7 @@
-# YTAmp
+# LLamaTubeMusic
 
 A Winamp 2.x-style overlay for YouTube Music. YouTube Music stays the playback
-engine. YTAmp only skins and controls it. It works in the browser tab and in the
+engine. LLamaTubeMusic only skins and controls it. It works in the browser tab and in the
 installed YouTube Music PWA window.
 
 > **Status: Phase 1 of 5.** The bridge and state sync are built. There is no
@@ -17,7 +17,7 @@ npm run build        # writes dist/bridge.js and dist/content.js
 
 1. Open `chrome://extensions`, turn on **Developer mode**.
 2. Click **Load unpacked** and select this folder (the one with `manifest.json`).
-3. After each rebuild, click the reload icon on the YTAmp card, then reload `music.youtube.com`.
+3. After each rebuild, click the reload icon on the LLamaTubeMusic card, then reload `music.youtube.com`.
 
 ## Architecture
 
@@ -26,7 +26,7 @@ npm run build        # writes dist/bridge.js and dist/content.js
 | Adapter | `src/bridge/adapter.ts` | MAIN | Every YTM selector and API name. The only file to edit when YTM changes |
 | Bridge | `src/bridge/bridge.ts` | MAIN | Emits state, executes commands, runs the audio graph (Phase 4) |
 | Content | `src/content/content.ts` | ISOLATED | UI and storage. Phase 1: console logging |
-| Protocol | `src/shared/protocol.ts` | both | Message schema and validation (`ytamp:v1`) |
+| Protocol | `src/shared/protocol.ts` | both | Message schema and validation (`llamatubemusic:v1`) |
 
 Messages go over `window.postMessage`. Every message is validated. Commands are
 accepted only from `event.source === window`.
@@ -41,10 +41,10 @@ Run these in DevTools on `music.youtube.com` (page context, not extension contex
 
 ```js
 // Pause, play, seek to 30 s, set volume to 40
-postMessage({ ns: 'ytamp:v1', kind: 'cmd', payload: { op: 'pause' } }, location.origin);
-postMessage({ ns: 'ytamp:v1', kind: 'cmd', payload: { op: 'play' } }, location.origin);
-postMessage({ ns: 'ytamp:v1', kind: 'cmd', payload: { op: 'seek', time: 30 } }, location.origin);
-postMessage({ ns: 'ytamp:v1', kind: 'cmd', payload: { op: 'volume', value: 40 } }, location.origin);
+postMessage({ ns: 'llamatubemusic:v1', kind: 'cmd', payload: { op: 'pause' } }, location.origin);
+postMessage({ ns: 'llamatubemusic:v1', kind: 'cmd', payload: { op: 'play' } }, location.origin);
+postMessage({ ns: 'llamatubemusic:v1', kind: 'cmd', payload: { op: 'seek', time: 30 } }, location.origin);
+postMessage({ ns: 'llamatubemusic:v1', kind: 'cmd', payload: { op: 'volume', value: 40 } }, location.origin);
 ```
 
 ## When YTM changes: fixing the adapter
