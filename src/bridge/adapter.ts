@@ -69,8 +69,8 @@ function barTrack(): { title: string; artist: string } | null {
 }
 
 function readTrack(): TrackInfo | null {
-  const bar = barTrack();
-  if (bar) return { title: bar.title, artist: bar.artist, album: '', artwork: null };
+  // The media session tracks the audio that is playing. YouTube Music's bar can lag behind
+  // it, so the bar is only a fallback.
   const md = navigator.mediaSession?.metadata;
   if (md && md.title) {
     const art = md.artwork.length ? md.artwork[md.artwork.length - 1].src : null;
@@ -81,6 +81,8 @@ function readTrack(): TrackInfo | null {
       artwork: art,
     };
   }
+  const bar = barTrack();
+  if (bar) return { title: bar.title, artist: bar.artist, album: '', artwork: null };
   return null;
 }
 
@@ -220,9 +222,10 @@ export function readQueue(): QueueSnapshot {
     artist: clip(row.querySelector(QUEUE.byline)?.textContent?.trim() ?? ''),
     // Match by video ID when both sides have one. The "selected" attribute can point at a
     // different row than the one playing, so it is only a fallback.
-    current: barMatch(row) ?? (playingId !== null && rowVideoId(row) !== null
-      ? rowVideoId(row) === playingId
-      : row.hasAttribute('selected') || row.classList.contains('selected')),
+    current:
+      playingId !== null && rowVideoId(row) !== null
+        ? rowVideoId(row) === playingId
+        : (barMatch(row) ?? (row.hasAttribute('selected') || row.classList.contains('selected'))),
   }));
   return { available: true, items };
 }
