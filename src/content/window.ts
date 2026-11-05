@@ -8,7 +8,7 @@
  */
 import css from './skin.css';
 import { loadSettings, saveSettings, type Settings } from '../shared/settings';
-import type { Command, PlaybackState } from '../shared/protocol';
+import type { Command, PlaybackState, QueueSnapshot } from '../shared/protocol';
 
 const HOST_ID = 'llamatubemusic-host';
 const BASE_W = 275;
@@ -21,6 +21,8 @@ export interface WindowHandle {
   update(state: PlaybackState): void;
   /** Shows or hides the window, and saves the choice. */
   toggleVisible(): void;
+  /** Shows the latest up-next snapshot in the playlist panel. */
+  queue(snapshot: QueueSnapshot): void;
   /** Sets the spectrum targets. The bars ease toward them every animation frame. */
   spectrum(bins: number[], silent: boolean): void;
 }
@@ -30,6 +32,7 @@ type Send = (cmd: Command) => void;
 const TEMPLATE = `
   <div class="titlebar" part="titlebar">
     <span class="title">LLAMATUBEMUSIC</span>
+    <button class="plbtn" type="button" title="Up next">PL</button>
     <button class="popout" type="button" title="Pop out into a separate window">PIP</button>
     <button class="hideui" type="button" title="Hide YouTube Music behind the window">UI</button>
     <button class="scale" type="button" title="Toggle 2x size">2x</button>
@@ -49,6 +52,7 @@ const TEMPLATE = `
   </div>
   <div class="seek" aria-label="Seek"><div class="fill"></div><div class="thumb"></div></div>
   <div class="volume" aria-label="Volume"><div class="fill"></div><div class="thumb"></div></div>
+  <div class="playlist" aria-label="Up next"></div>
 `;
 
 interface Ui {
@@ -223,7 +227,64 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
     pipWin?.close();
   });
 
+  // ---- Up-next playlist panel (expands below the window) ----
+  const PANEL_H = 120;
+  const plBtn = win.querySelector<HTMLButtonElement>('.plbtn');
+  const plist = win.querySelector<HTMLElement>('.playlist')!;
+  let playlistOpen = false;
+
+  const setPlaylistOpen = (open: boolean): void => {
+    playlistOpen = open;
+    win.classList.toggle('expanded', open);
+    plBtn?.classList.toggle('active', open);
+    send({ op: 'queueWatch', on: open });
+    // A popped-out window needs its own height to match. Browsers may refuse the resize.
+    if (pipWin) {
+      try {
+        pipWin.resizeTo(BASE_W * settings.scale, (BASE_H + (open ? PANEL_H : 0)) * settings.scale);
+      } catch {
+        console.warn('[LLamaTubeMusic] Could not resize the popped-out window.');
+      }
+    }
+  };
+  plBtn?.addEventListener('click', () => setPlaylistOpen(!playlistOpen));
+
+  // Delegated click: one listener for every row.
+  plist.addEventListener('click', (e: MouseEvent) => {
+    const row = (e.target as HTMLElement).closest<HTMLElement>('[data-index]');
+    if (row) send({ op: 'playIndex', index: Number(row.dataset.index) });
+  });
+
+  /** Rebuilds the rows with textContent only, so track names are never parsed as HTML. */
+  const renderQueue = (snapshot: QueueSnapshot): void => {
+    plist.replaceChildren();
+    if (!snapshot.available) {
+      const note = document.createElement('div');
+      note.className = 'pl-empty';
+      note.textContent = 'Queue not found in YouTube Music. Open the queue panel there, then try again.';
+      plist.append(note);
+      return;
+    }
+    if (snapshot.items.length === 0) {
+      const note = document.createElement('div');
+      note.className = 'pl-empty';
+      note.textContent = 'The queue is empty.';
+      plist.append(note);
+      return;
+    }
+    snapshot.items.forEach((item, i) => {
+      const row = document.createElement('div');
+      row.className = item.current ? 'pl-row current' : 'pl-row';
+      row.dataset.index = String(i);
+      row.textContent = `${i + 1}. ${item.artist ? item.artist + ' - ' : ''}${item.title}`;
+      plist.append(row);
+    });
+  };
+
   return {
+    queue(snapshot: QueueSnapshot): void {
+      if (playlistOpen) renderQueue(snapshot);
+    },
     toggleVisible(): void {
       settings.visible = !settings.visible;
       applyVisibility();

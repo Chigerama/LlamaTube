@@ -86,3 +86,26 @@ Run this in the console while a song plays, and check which surfaces still exist
 - Cast takeover: not verified.
 - The shortcut and toolbar in the installed app window depend on Chrome, so record what you see.
 - The spectrum stays at zero until the audio context is running. A click or key press starts it.
+
+## Phase 6: up-next playlist panel
+
+Run this probe first, with the YouTube Music queue panel **closed**, then **open**, and paste both results:
+
+```js
+(() => ({
+  queueItems: document.querySelectorAll('ytmusic-player-queue-item').length,
+  queueElement: !!document.querySelector('ytmusic-player-queue'),
+  sampleTitle: document.querySelector('ytmusic-player-queue-item .song-title')?.textContent?.trim() ?? null,
+  sampleByline: document.querySelector('ytmusic-player-queue-item .byline')?.textContent?.trim() ?? null,
+  selectedRows: document.querySelectorAll('ytmusic-player-queue-item[selected]').length,
+}))()
+```
+
+| # | Action | Expected |
+|---|---|---|
+| 6.1 | Click **PL** | The panel opens under the window, and rows list the queue |
+| 6.2 | Play a different song from YTM's own queue | The highlighted row follows the song within about 2 s |
+| 6.3 | Click a row | That song plays |
+| 6.4 | Click **PL** again | The panel closes |
+| 6.5 | Panel open with no queue in the page | "Queue not found in YouTube Music..." message, no errors |
+| 6.6 | Pop out with the panel open | The popped window grows to fit. If it doesn't, record that |

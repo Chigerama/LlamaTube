@@ -10,7 +10,7 @@
  *
  * Everything here is UNVERIFIED against live YTM until the Phase 1 probe runs.
  */
-import type { Command, PlaybackState, TrackInfo } from '../shared/protocol';
+import type { Command, PlaybackState, QueueSnapshot, TrackInfo } from '../shared/protocol';
 
 const SEL = {
   player: '#movie_player',
@@ -147,9 +147,41 @@ export function runCommand(cmd: Command): boolean {
       if (!player?.seekTo) return false;
       player.seekTo(Math.max(0, cmd.time), true);
       return true;
+    case 'playIndex':
+      return playQueueIndex(cmd.index);
+    case 'queueWatch':
+      return true; // handled by the bridge, which owns the watch timer
     case 'volume':
       if (!player?.setVolume) return false;
       player.setVolume(clamp(Math.round(cmd.value), 0, 100));
       return true;
   }
+}
+
+// ---- Up-next queue ----
+// Unverified against live YTM: these selectors need the Phase 6 probe.
+const QUEUE = {
+  item: 'ytmusic-player-queue-item',
+  title: '.song-title',
+  byline: '.byline',
+} as const;
+
+/** Reads the queue rows from the page. `available` is false when none are rendered. */
+export function readQueue(): QueueSnapshot {
+  const rows = Array.from(document.querySelectorAll<HTMLElement>(QUEUE.item));
+  if (rows.length === 0) return { available: false, items: [] };
+  const items = rows.slice(0, 200).map((row) => ({
+    title: clip(row.querySelector(QUEUE.title)?.textContent?.trim() ?? ''),
+    artist: clip(row.querySelector(QUEUE.byline)?.textContent?.trim() ?? ''),
+    current: row.hasAttribute('selected') || row.classList.contains('selected'),
+  }));
+  return { available: true, items };
+}
+
+/** Plays the queue row at `index` by clicking it, the same path YTM's own UI uses. */
+export function playQueueIndex(index: number): boolean {
+  const row = document.querySelectorAll<HTMLElement>(QUEUE.item)[index];
+  if (!row) return false;
+  (row.querySelector<HTMLElement>(QUEUE.title) ?? row).click();
+  return true;
 }

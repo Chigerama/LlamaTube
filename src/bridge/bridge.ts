@@ -5,7 +5,7 @@
  * while audio is playing.
  */
 import { NS, parseMessage, post, type PlaybackState } from '../shared/protocol';
-import { findVideo, isPlaying, readState, runCommand } from './adapter';
+import { findVideo, isPlaying, readQueue, readState, runCommand } from './adapter';
 import { attachTap, readBins, wireGestureResume } from './audio-graph';
 
 declare global {
@@ -58,6 +58,24 @@ if (!window.__llamatubemusicBridge) {
     if (frame) post({ ns: NS, kind: 'spectrum', payload: frame });
   }
 
+  // The queue is sent only while the window's playlist panel is open.
+  const QUEUE_INTERVAL_MS = 1500;
+  let queueTimer: number | null = null;
+
+  function postQueue(): void {
+    post({ ns: NS, kind: 'queue', payload: readQueue() });
+  }
+
+  function setQueueWatch(on: boolean): void {
+    if (on && queueTimer === null) {
+      postQueue();
+      queueTimer = window.setInterval(postQueue, QUEUE_INTERVAL_MS);
+    } else if (!on && queueTimer !== null) {
+      window.clearInterval(queueTimer);
+      queueTimer = null;
+    }
+  }
+
   /** Emits when anything other than time changed, or time moved past the epsilon. */
   function emit(force = false): void {
     const state = readState();
@@ -87,7 +105,8 @@ if (!window.__llamatubemusicBridge) {
     if (msg.kind === 'hello') {
       emit(true);
     } else if (msg.kind === 'cmd') {
-      runCommand(msg.payload);
+      if (msg.payload.op === 'queueWatch') setQueueWatch(msg.payload.on);
+      else runCommand(msg.payload);
     }
   });
 
