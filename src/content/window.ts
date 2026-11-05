@@ -417,7 +417,19 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
   // Some songs have only an audio stream. YouTube Music's Video mode switches to the video at
   // the same point, so ask for it, then return to the position once the video is showing.
   const SWITCH_TIMEOUT_MS = 6000;
-  let switchPending: { time: number; timer: number } | null = null;
+  let switchPending: { time: number; key: string; timer: number } | null = null;
+
+  /** Identifies the song playing, so a request is only honoured for the song it was made for. */
+  const songKey = (): string => {
+    const md = navigator.mediaSession?.metadata;
+    return md ? `${md.title}|${md.artist}` : '';
+  };
+
+  const clearSwitch = (): void => {
+    if (!switchPending) return;
+    window.clearTimeout(switchPending.timer);
+    switchPending = null;
+  };
 
   const giveUpSwitch = (): void => {
     switchPending = null;
@@ -427,10 +439,13 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
   const attachMirror = (): void => {
     const source = document.querySelector<Capturable>('video');
     if (!source || source.videoWidth === 0) {
-      // No video stream yet. Ask YouTube Music for Video mode, once per request.
+      // A request made for a different song is stale: drop it, and ask again for this one.
+      if (switchPending && switchPending.key !== songKey()) clearSwitch();
+      // No video stream yet. Ask YouTube Music for Video mode, once per song.
       if (source && !switchPending) {
         switchPending = {
           time: source.currentTime,
+          key: songKey(),
           timer: window.setTimeout(giveUpSwitch, SWITCH_TIMEOUT_MS),
         };
         send({ op: 'videoMode' });
@@ -453,11 +468,12 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
       vdEmpty.hidden = true;
       void mirror.play().catch(() => undefined);
       if (switchPending) {
-        // Return to the position the song was at, if the switch moved it.
-        const { time, timer } = switchPending;
-        window.clearTimeout(timer);
-        switchPending = null;
-        if (Math.abs(source.currentTime - time) > 1) send({ op: 'seek', time });
+        // Return to the position the song was at, but only for the same song.
+        const { time, key } = switchPending;
+        clearSwitch();
+        if (key === songKey() && Math.abs(source.currentTime - time) > 1) {
+          send({ op: 'seek', time });
+        }
       }
     } catch {
       mirror.hidden = true;
@@ -477,10 +493,7 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
     } else {
       if (mirror.ownerDocument.fullscreenElement) void mirror.ownerDocument.exitFullscreen();
       if (fullscreenView) setFullscreenView(false);
-      if (switchPending) {
-        window.clearTimeout(switchPending.timer);
-        switchPending = null;
-      }
+      clearSwitch();
       mirror.pause();
       mirror.srcObject = null;
     }
