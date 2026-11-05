@@ -27,6 +27,8 @@ export interface PlaybackState {
   /** 0..100, YTM's own volume scale. */
   volume: number;
   muted: boolean;
+  /** YouTube Music's shuffle state, read from the `shuffle-on` attribute of its player bar. */
+  shuffle: boolean;
   track: TrackInfo | null;
 }
 
@@ -60,7 +62,8 @@ export type Command =
   | { op: 'volume'; value: number }
   | { op: 'playIndex'; index: number }
   | { op: 'queueWatch'; on: boolean }
-  | { op: 'videoMode' };
+  | { op: 'videoMode' }
+  | { op: 'shuffle' };
 
 export type Message =
   | { ns: typeof NS; kind: 'hello' }
@@ -94,6 +97,7 @@ function isState(x: unknown): x is PlaybackState {
     isNum(x.duration) &&
     isNum(x.volume) &&
     isBool(x.muted) &&
+    isBool(x.shuffle) &&
     (x.track === null || isTrack(x.track))
   );
 }
@@ -138,6 +142,7 @@ function isCommand(x: unknown): x is Command {
     case 'queueWatch':
       return isBool(x.on);
     case 'videoMode':
+    case 'shuffle':
       return true;
     default:
       return false;

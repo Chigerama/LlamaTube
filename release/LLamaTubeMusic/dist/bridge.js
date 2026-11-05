@@ -10,7 +10,7 @@
     return isObj(x) && isStr(x.title) && isStr(x.artist) && isStr(x.album) && (x.artwork === null || isStr(x.artwork));
   }
   function isState(x) {
-    return isObj(x) && isBool(x.ready) && isBool(x.playing) && isNum(x.currentTime) && isNum(x.duration) && isNum(x.volume) && isBool(x.muted) && (x.track === null || isTrack(x.track));
+    return isObj(x) && isBool(x.ready) && isBool(x.playing) && isNum(x.currentTime) && isNum(x.duration) && isNum(x.volume) && isBool(x.muted) && isBool(x.shuffle) && (x.track === null || isTrack(x.track));
   }
   function isSpectrum(x) {
     return isObj(x) && Array.isArray(x.bins) && x.bins.length >= 1 && x.bins.length <= 64 && x.bins.every((v) => Number.isInteger(v) && v >= 0 && v <= 255) && isBool(x.silent);
@@ -37,6 +37,7 @@
       case "queueWatch":
         return isBool(x.on);
       case "videoMode":
+      case "shuffle":
         return true;
       default:
         return false;
@@ -118,6 +119,10 @@
     if (video) return !video.paused && !video.ended;
     return navigator.mediaSession?.playbackState === "playing";
   }
+  var SHUFFLE = "ytmusic-player-bar yt-icon-button.shuffle";
+  function readShuffle() {
+    return document.querySelector("ytmusic-player-bar")?.hasAttribute("shuffle-on") ?? false;
+  }
   function readState() {
     const video = findVideo();
     const player = findPlayer();
@@ -132,6 +137,7 @@
       duration: Math.max(0, duration),
       volume: clamp(volume, 0, 100),
       muted: video?.muted ?? false,
+      shuffle: readShuffle(),
       track: readTrack()
     };
   }
@@ -178,6 +184,8 @@
       // handled by the bridge, which owns the watch timer
       case "videoMode":
         return clickVideoMode();
+      case "shuffle":
+        return pressSelector(`${SHUFFLE} button`) || pressSelector(SHUFFLE);
       case "volume":
         if (!player?.setVolume) return false;
         player.setVolume(clamp(Math.round(cmd.value), 0, 100));

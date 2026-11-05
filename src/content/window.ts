@@ -50,6 +50,7 @@ const TEMPLATE = `
     <button type="button" class="btn pause" title="Pause" data-op="pause"><i></i></button>
     <button type="button" class="btn stop" title="Stop" data-op="stop"><i></i></button>
     <button type="button" class="btn next" title="Next" data-op="next"><i></i></button>
+    <button type="button" class="btn shuf" title="Shuffle" data-op="shuffle">SH</button>
   </div>
   <div class="seek" aria-label="Seek"><div class="fill"></div><div class="thumb"></div></div>
   <div class="volume" aria-label="Volume"><div class="fill"></div><div class="thumb"></div></div>
@@ -70,6 +71,7 @@ interface Ui {
   marquee: HTMLElement;
   trackBox: HTMLElement;
   play: HTMLElement;
+  shuffle: HTMLElement;
   seek: HTMLElement;
   spectrum: HTMLElement;
   volume: HTMLElement;
@@ -146,6 +148,7 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
     marquee: q('.marquee'),
     trackBox: q('.track'),
     play: q('.btn.play'),
+    shuffle: q('.btn.shuf'),
     seek: q('.seek'),
     spectrum: q('.spectrum'),
     volume: q('.volume'),
@@ -649,6 +652,8 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
       renderTime(ui, state, remaining.get(), seek.preview());
       renderTrack(ui, state);
       ui.play.classList.toggle('active', state.playing);
+      ui.shuffle.classList.toggle('active', state.shuffle);
+      ui.shuffle.title = state.shuffle ? 'Shuffle: on' : 'Shuffle: off';
       if (!seek.dragging()) renderSeek(ui, state);
       if (!volume.dragging()) renderVolume(ui, state.volume);
     },
