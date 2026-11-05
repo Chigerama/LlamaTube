@@ -366,5 +366,8 @@ function renderTrack(ui: Ui, state: PlaybackState): void {
   ui.marquee.dataset.text = text;
   // Duplicate the text so the marquee loops seamlessly when it overflows.
   ui.marquee.textContent = `${text}     ${text}     `;
-  ui.marquee.classList.toggle('scroll', ui.marquee.scrollWidth / 2 > ui.trackBox.clientWidth);
+  // Scroll whenever the two looped copies together overflow the box. Checking
+  // only one copy missed titles that were wider than the box but narrower
+  // than two copies.
+  ui.marquee.classList.toggle('scroll', ui.marquee.scrollWidth > ui.trackBox.clientWidth);
 }
