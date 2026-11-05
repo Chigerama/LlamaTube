@@ -147,7 +147,7 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
 
   const applyVisibility = (): void => {
     host.style.display = settings.visible ? '' : 'none';
-    win.style.display = settings.visible ? '' : 'none';
+    win.style.display = settings.visible && !win.dataset.fs ? '' : 'none';
     veil.classList.toggle('on', settings.visible && settings.hideUi);
     win.querySelector('.hideui')?.classList.toggle('active', settings.hideUi);
   };
@@ -439,9 +439,24 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
   const fsOverlay = shadow.querySelector<HTMLElement>('.fsview')!;
   const fsMirror = fsView.querySelector<HTMLVideoElement>('.fs-mirror')!;
 
+  // Set while the fullscreen view is on, so the popped-out window can be restored afterwards.
+  let wasPopped = false;
+
   const setFullscreenView = (on: boolean): void => {
     if (on && !videoOpen) setVideoOpen(true);
     fullscreenView = on;
+    // The window hides during fullscreen, in the page or popped out, so nothing sits over the video.
+    win.dataset.fs = on ? '1' : '';
+    applyVisibility();
+    if (on && pipWin) {
+      // A popped-out window stays on top of fullscreen, so close it and remember to reopen it.
+      wasPopped = true;
+      pipWin.close();
+    } else if (!on && wasPopped) {
+      wasPopped = false;
+      // Reopening needs a click. Escape can't reopen it, so the window stays in the page then.
+      popOut().catch(() => console.warn('[LLamaTubeMusic] Could not reopen the popped-out window.'));
+    }
     fsOverlay.classList.toggle('on', on);
     fsMirror.srcObject = on ? mirror.srcObject : null;
     if (on) void fsMirror.play().catch(() => undefined);
