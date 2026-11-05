@@ -92,6 +92,17 @@ function fmt(seconds: number): string {
   return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 }
 
+const debugOn = (): boolean => {
+  try {
+    return sessionStorage.getItem('llamatubemusicDebug') === '1';
+  } catch {
+    return false;
+  }
+};
+const dlog = (...args: unknown[]): void => {
+  if (debugOn()) console.log('[LLT debug]', ...args);
+};
+
 export async function mountWindow(send: Send): Promise<WindowHandle | null> {
   if (document.getElementById(HOST_ID)) return null;
 
@@ -262,6 +273,7 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
   let playlistOpen = false;
 
   const setPlaylistOpen = (open: boolean): void => {
+    dlog('PL toggle ->', open, 'video open:', videoOpen);
     playlistOpen = open;
     win.classList.toggle('expanded', open);
     plBtn?.classList.toggle('active', open);
@@ -452,6 +464,7 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
   };
 
   const setVideoOpen = (open: boolean): void => {
+    dlog('VD toggle ->', open, 'list open:', playlistOpen);
     videoOpen = open;
     win.classList.toggle('video-open', open);
     vdBtn?.classList.toggle('active', open);
@@ -530,6 +543,24 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
     },
     true,
   );
+
+  // Title-bar clicks: log which element is under the pointer, and where the two buttons are.
+  const titlebar = win.querySelector<HTMLElement>('.titlebar');
+  titlebar?.addEventListener('click', (e: MouseEvent) => {
+    if (!debugOn()) return;
+    const rect = (sel: string) => {
+      const r = win.querySelector(sel)?.getBoundingClientRect();
+      return r ? [Math.round(r.left), Math.round(r.right)] : null;
+    };
+    const under = shadow.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null;
+    dlog('title click at', Math.round(e.clientX), {
+      target: (e.target as HTMLElement).className,
+      under: under?.className ?? null,
+      vdSpan: rect('.vdbtn'),
+      plSpan: rect('.plbtn'),
+      popOutSpan: rect('.popout'),
+    });
+  });
 
   return {
     queue(snapshot: QueueSnapshot): void {
