@@ -49,8 +49,12 @@
   overflow: hidden;
 }
 
+.win {
+  --pl-h: 120px;
+}
+
 .win.expanded {
-  height: calc(116px + 120px);
+  height: calc(116px + var(--pl-h));
 }
 
 /* ---- Title bar (also the drag handle) ---- */
@@ -339,7 +343,7 @@
   left: 0;
   top: 116px;
   width: 275px;
-  height: 120px;
+  height: var(--pl-h);
   display: none;
   overflow-y: auto;
   padding: 3px 5px;
@@ -390,4 +394,41 @@
 
 .veil.on {
   display: block;
+}
+
+/* Corner grip that resizes the list. */
+.pl-grip {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 12px;
+  height: 12px;
+  display: none;
+  cursor: nwse-resize;
+  background:
+    linear-gradient(135deg, transparent 0 45%, var(--llt-bevel-hi) 45% 55%, transparent 55% 70%, var(--llt-bevel-hi) 70% 80%, transparent 80%);
+}
+.win.expanded .pl-grip {
+  display: block;
+}
+
+/* Scrollbar in the window's style: a dark well and a bevelled grey thumb. */
+.playlist {
+  scrollbar-width: thin;
+  scrollbar-color: var(--llt-face-hi) var(--llt-well);
+}
+.playlist::-webkit-scrollbar {
+  width: 9px;
+}
+.playlist::-webkit-scrollbar-track {
+  background: var(--llt-well);
+  border-left: 1px solid var(--llt-bevel-lo);
+}
+.playlist::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, var(--llt-face-hi), var(--llt-face-lo));
+  border: 1px solid var(--llt-bevel-lo);
+  box-shadow: inset 1px 1px 0 var(--llt-bevel-hi);
+}
+.playlist::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(90deg, #6d7284, var(--llt-face));
 }

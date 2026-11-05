@@ -7,7 +7,7 @@
  * and calls `handle.update()` with each state.
  */
 import css from './skin.css';
-import { loadSettings, saveSettings, type Settings } from '../shared/settings';
+import { loadSettings, saveSettings, MIN_PL_H, MAX_PL_H, type Settings } from '../shared/settings';
 import type { Command, PlaybackState, QueueSnapshot } from '../shared/protocol';
 
 const HOST_ID = 'llamatubemusic-host';
@@ -53,6 +53,7 @@ const TEMPLATE = `
   <div class="seek" aria-label="Seek"><div class="fill"></div><div class="thumb"></div></div>
   <div class="volume" aria-label="Volume"><div class="fill"></div><div class="thumb"></div></div>
   <div class="playlist" aria-label="Up next"></div>
+  <div class="pl-grip" title="Drag to resize the list"></div>
 `;
 
 interface Ui {
@@ -228,7 +229,6 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
   });
 
   // ---- Up-next playlist panel (expands below the window) ----
-  const PANEL_H = 120;
   const plBtn = win.querySelector<HTMLButtonElement>('.plbtn');
   const plist = win.querySelector<HTMLElement>('.playlist')!;
   let playlistOpen = false;
@@ -241,7 +241,7 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
     // A popped-out window needs its own height to match. Browsers may refuse the resize.
     if (pipWin) {
       try {
-        pipWin.resizeTo(BASE_W * settings.scale, (BASE_H + (open ? PANEL_H : 0)) * settings.scale);
+        pipWin.resizeTo(BASE_W * settings.scale, (BASE_H + (open ? settings.plHeight : 0)) * settings.scale);
       } catch {
         console.warn('[LLamaTubeMusic] Could not resize the popped-out window.');
       }
@@ -280,6 +280,56 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
       plist.append(row);
     });
   };
+
+  // ---- Resizable list: drag the corner grip. Height is remembered. ----
+  const grip = win.querySelector<HTMLElement>('.pl-grip')!;
+  win.style.setProperty('--pl-h', `${settings.plHeight}px`);
+  let resizing: { startY: number; startH: number } | null = null;
+
+  const applyPlHeight = (h: number): void => {
+    settings.plHeight = h;
+    win.style.setProperty('--pl-h', `${h}px`);
+    if (pipWin) {
+      try {
+        pipWin.resizeTo(BASE_W * settings.scale, (BASE_H + h) * settings.scale);
+      } catch {
+        // Browsers may refuse; the list still resizes in the page.
+      }
+    }
+  };
+
+  grip.addEventListener('pointerdown', (e: PointerEvent) => {
+    if (e.button !== 0) return;
+    resizing = { startY: e.clientY, startH: settings.plHeight };
+    grip.setPointerCapture(e.pointerId);
+    e.preventDefault();
+    e.stopPropagation();
+  });
+  grip.addEventListener('pointermove', (e: PointerEvent) => {
+    if (!resizing) return;
+    // Pointer movement is in viewport pixels; the window is scaled by settings.scale.
+    const dy = (e.clientY - resizing.startY) / settings.scale;
+    // Keep the bottom of the window on screen.
+    const hostTop = host.getBoundingClientRect().top;
+    const fitH = (window.innerHeight - hostTop) / settings.scale - BASE_H;
+    const h = Math.round(Math.min(Math.max(resizing.startH + dy, MIN_PL_H), Math.min(MAX_PL_H, fitH)));
+    win.style.setProperty('--pl-h', `${h}px`);
+  });
+  const finishResize = (e: PointerEvent): void => {
+    if (!resizing) return;
+    const dy = (e.clientY - resizing.startY) / settings.scale;
+    const hostTop = host.getBoundingClientRect().top;
+    const fitH = (window.innerHeight - hostTop) / settings.scale - BASE_H;
+    const h = Math.round(Math.min(Math.max(resizing.startH + dy, MIN_PL_H), Math.min(MAX_PL_H, fitH)));
+    resizing = null;
+    applyPlHeight(h);
+    void saveSettings(settings);
+  };
+  grip.addEventListener('pointerup', finishResize);
+  grip.addEventListener('pointercancel', () => {
+    resizing = null;
+    win.style.setProperty('--pl-h', `${settings.plHeight}px`);
+  });
 
   return {
     queue(snapshot: QueueSnapshot): void {
