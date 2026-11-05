@@ -8,6 +8,7 @@ const common = {
   target: 'chrome120',
   sourcemap: true,
   logLevel: 'info',
+  loader: { '.css': 'text' },
 };
 
 await esbuild.build({ ...common, entryPoints: ['src/bridge/bridge.ts'], outfile: 'dist/bridge.js' });

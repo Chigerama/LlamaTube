@@ -23,6 +23,7 @@
   },
   "homepage": "https://github.com/Chigerama/LlamaTube#readme",
   "devDependencies": {
+    "@types/chrome": "^0.3.7",
     "esbuild": "^0.25.12",
     "typescript": "^5.9.3"
   },
