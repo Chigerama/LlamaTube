@@ -262,6 +262,31 @@ const VIDEO_MODE = 'ytmusic-av-toggle .video-button';
 export function clickVideoMode(): boolean {
   const button = document.querySelector<HTMLElement>(VIDEO_MODE);
   if (!button) return false;
+  const debug = (() => {
+    try {
+      return sessionStorage.getItem('llamatubemusicDebug') === '1';
+    } catch {
+      return false;
+    }
+  })();
+  const snapshot = (label: string) => {
+    if (!debug) return;
+    const toggle = document.querySelector('ytmusic-av-toggle');
+    const video = document.querySelector<HTMLVideoElement>('video');
+    console.log('[LLT debug] video mode', label, {
+      playbackMode: toggle?.getAttribute('playback-mode') ?? null,
+      videoSelected: toggle?.getAttribute('is-video-playback-mode-selected') ?? null,
+      audioSelected: toggle?.getAttribute('is-audio-playback-mode-selected') ?? null,
+      toggleDisabled: toggle?.hasAttribute('toggle-disabled') ?? null,
+      videoButtonPressed: button.getAttribute('aria-pressed'),
+      videoWidth: video?.videoWidth ?? null,
+      currentSrcPrefix: (video?.currentSrc ?? '').slice(0, 24),
+      readyState: video?.readyState ?? null,
+    });
+  };
+  snapshot('before press');
+  window.setTimeout(() => snapshot('1.5 s after press'), 1500);
+  window.setTimeout(() => snapshot('4 s after press'), 4000);
   // Full press, like a tap: a plain click() does not trigger YouTube Music's handlers.
   pressElement(button);
   return true;
