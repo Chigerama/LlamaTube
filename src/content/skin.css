@@ -287,12 +287,24 @@
   margin-left: 2px;
 }
 
-/* Shuffle is a text label, not a glyph: it reads as a mode, and its lit state matches the others. */
+/* Shuffle icon: two crossing arrows, drawn as a stroked SVG so it stays sharp at 1x and 2x. */
 .btn.shuf {
   margin-left: 6px;
-  font: 700 8px/1 sans-serif;
-  letter-spacing: 0.04em;
   color: var(--llt-text);
+}
+
+.btn.shuf svg {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 10px;
+  height: 8px;
+  transform: translate(-50%, -50%);
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.2;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
 }
 
 /* ---- Seek and volume sliders ---- */
