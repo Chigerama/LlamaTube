@@ -19,6 +19,8 @@ const VOLUME_THROTTLE_MS = 60;
 
 export interface WindowHandle {
   update(state: PlaybackState): void;
+  /** Shows or hides the window, and saves the choice. */
+  toggleVisible(): void;
   /** Sets the spectrum targets. The bars ease toward them every animation frame. */
   spectrum(bins: number[], silent: boolean): void;
 }
@@ -28,6 +30,7 @@ type Send = (cmd: Command) => void;
 const TEMPLATE = `
   <div class="titlebar" part="titlebar">
     <span class="title">LLAMATUBEMUSIC</span>
+    <button class="hideui" type="button" title="Hide YouTube Music behind the window">UI</button>
     <button class="scale" type="button" title="Toggle 2x size">2x</button>
   </div>
   <div class="lcd" title="Click to switch elapsed and remaining time">
@@ -100,7 +103,10 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
     }
   }
 
-  shadow.append(style, win);
+  // Dark cover for hide-UI mode. It sits inside the host, so hiding the host hides it too.
+  const veil = document.createElement('div');
+  veil.className = 'veil';
+  shadow.append(style, veil, win);
   document.documentElement.append(host);
 
   const q = <T extends HTMLElement>(sel: string) => win.querySelector<T>(sel)!;
@@ -121,6 +127,18 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
   applyLayout(host, win, settings);
   wireDrag(host, q('.titlebar'), settings);
   wireScale(host, win, settings);
+
+  const applyVisibility = (): void => {
+    host.style.display = settings.visible ? '' : 'none';
+    veil.classList.toggle('on', settings.visible && settings.hideUi);
+    win.querySelector('.hideui')?.classList.toggle('active', settings.hideUi);
+  };
+  applyVisibility();
+  win.querySelector<HTMLButtonElement>('.hideui')?.addEventListener('click', () => {
+    settings.hideUi = !settings.hideUi;
+    applyVisibility();
+    void saveSettings(settings);
+  });
   const remaining = wireLcd(ui);
   wireTransport(win, send);
   const seek = wireSeek(ui, send);
@@ -150,6 +168,11 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
   };
 
   return {
+    toggleVisible(): void {
+      settings.visible = !settings.visible;
+      applyVisibility();
+      void saveSettings(settings);
+    },
     spectrum(bins: number[], silent: boolean): void {
       const per = bins.length / bars.length;
       for (let i = 0; i < bars.length; i++) {

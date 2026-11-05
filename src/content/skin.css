@@ -301,3 +301,40 @@
 .spectrum.silent i {
   opacity: 0.3;
 }
+
+/* ---- Phase 5: hide-YTM-UI mode and show/hide ---- */
+.hideui {
+  font: 700 8px/1 monospace;
+  width: 22px;
+  height: 10px;
+  padding: 0;
+  margin-left: auto;
+  margin-right: 3px;
+  color: var(--ytamp-text);
+  background: var(--ytamp-face);
+  border: 1px solid var(--ytamp-bevel-lo);
+  box-shadow: inset 1px 1px 0 var(--ytamp-bevel-hi);
+  cursor: pointer;
+}
+
+.hideui.active {
+  color: var(--ytamp-lcd-fg);
+  background: var(--ytamp-lcd-dim);
+}
+
+.win {
+  z-index: 1;
+}
+
+/* Full-page cover for hide-UI mode. The window sits above it, and playback continues. */
+.veil {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  display: none;
+  background: #07080b;
+}
+
+.veil.on {
+  display: block;
+}
