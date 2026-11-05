@@ -255,3 +255,44 @@
 .volume .thumb {
   right: 0;
 }
+
+/* ---- Phase 3: interactive states ---- */
+.lcd,
+.seek,
+.volume,
+.btn {
+  cursor: pointer;
+}
+
+.lcd {
+  cursor: pointer;
+}
+
+.btn.active {
+  background: linear-gradient(180deg, var(--ytamp-lcd-dim), var(--ytamp-lcd-bg));
+  box-shadow: inset 1px 1px 0 var(--ytamp-bevel-lo);
+}
+
+.marquee {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.marquee.scroll {
+  animation: ytamp-marquee 12s linear infinite;
+}
+
+@keyframes ytamp-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.seek .thumb,
+.volume .thumb {
+  left: 0;
+  right: auto;
+}
