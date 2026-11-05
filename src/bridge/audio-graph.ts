@@ -17,12 +17,17 @@ const FFT_SIZE = 2048; // about 10.8 Hz per bin at 44.1 kHz: enough resolution f
 const BANDS = 64; // spectrum frames carry 64 bands, spaced evenly on a log (per-octave) scale
 const BAND_MIN_HZ = 40;
 const BAND_MAX_HZ = 16000;
-// Level window, in dB, that maps to 0..100%. Anything quieter is the floor, anything louder the ceiling.
-const FLOOR_DB = -80;
-const CEIL_DB = -20;
+// Each band is shown relative to its own recent peak, so every band uses the full height
+// whatever the genre. WINDOW_DB is how far below that peak the bar bottoms out.
+const WINDOW_DB = 30;
+// How fast a band's peak falls back, in dB per frame (about 1.5 dB per second at 30 fps).
+// A slow fall keeps quiet passages from turning into full bars.
+const PEAK_FALL_DB_PER_FRAME = 0.05;
+// Below this, a band is silent whatever its peak.
+const FLOOR_DB = -85;
 // Music carries far more bass energy than treble, so lift the treble by this much per octave
 // above TILT_REF_HZ (and lower the bass by the same amount below it).
-const TILT_DB_PER_OCTAVE = 3;
+const TILT_DB_PER_OCTAVE = 1.5;
 const TILT_REF_HZ = 1000;
 const DB_SILENCE = -120;
 
@@ -83,6 +88,9 @@ export function attachTap(video: HTMLMediaElement): boolean {
  * level at its centre frequency, gets a pink-noise tilt (music's energy falls with
  * frequency, so the treble is lifted to match), and is mapped from FLOOR_DB..CEIL_DB.
  */
+// The loudest recent level of each band, updated every frame.
+let bandPeaks: number[] = [];
+
 export function readBins(): { bins: number[]; silent: boolean } | null {
   if (!analyser || !ctx) return null;
   const n = analyser.frequencyBinCount;
@@ -100,7 +108,11 @@ export function readBins(): { bins: number[]; silent: boolean } | null {
     const t = Math.min(1, Math.max(0, pos - i));
     let level = db[i] + (db[i + 1] - db[i]) * t;
     level += TILT_DB_PER_OCTAVE * Math.log2(f / TILT_REF_HZ);
-    const norm = (level - FLOOR_DB) / (CEIL_DB - FLOOR_DB);
+    if (bandPeaks.length !== BANDS) bandPeaks = new Array<number>(BANDS).fill(FLOOR_DB);
+    // Track this band's peak: rise at once, fall slowly.
+    bandPeaks[k] = Math.max(level, bandPeaks[k] - PEAK_FALL_DB_PER_FRAME);
+    const top = Math.max(bandPeaks[k], FLOOR_DB + WINDOW_DB);
+    const norm = level < FLOOR_DB ? 0 : (level - (top - WINDOW_DB)) / WINDOW_DB;
     bands.push(Math.round(Math.min(1, Math.max(0, norm)) * 255));
   }
   return { bins: bands, silent };
