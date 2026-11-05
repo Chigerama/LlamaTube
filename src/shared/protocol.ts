@@ -36,6 +36,19 @@ export interface SpectrumFrame {
   silent: boolean;
 }
 
+/** One row of the up-next queue. `current` marks the playing track. */
+export interface QueueItem {
+  title: string;
+  artist: string;
+  current: boolean;
+}
+
+/** Queue snapshot. `available` is false when YTM's queue is not in the page. */
+export interface QueueSnapshot {
+  available: boolean;
+  items: QueueItem[];
+}
+
 export type Command =
   | { op: 'play' }
   | { op: 'pause' }
@@ -44,13 +57,16 @@ export type Command =
   | { op: 'next' }
   | { op: 'prev' }
   | { op: 'seek'; time: number }
-  | { op: 'volume'; value: number };
+  | { op: 'volume'; value: number }
+  | { op: 'playIndex'; index: number }
+  | { op: 'queueWatch'; on: boolean };
 
 export type Message =
   | { ns: typeof NS; kind: 'hello' }
   | { ns: typeof NS; kind: 'state'; payload: PlaybackState }
   | { ns: typeof NS; kind: 'cmd'; payload: Command }
-  | { ns: typeof NS; kind: 'spectrum'; payload: SpectrumFrame };
+  | { ns: typeof NS; kind: 'spectrum'; payload: SpectrumFrame }
+  | { ns: typeof NS; kind: 'queue'; payload: QueueSnapshot };
 
 const isObj = (x: unknown): x is Record<string, unknown> =>
   typeof x === 'object' && x !== null;
@@ -92,6 +108,16 @@ function isSpectrum(x: unknown): x is SpectrumFrame {
   );
 }
 
+function isQueue(x: unknown): x is QueueSnapshot {
+  return (
+    isObj(x) &&
+    isBool(x.available) &&
+    Array.isArray(x.items) &&
+    x.items.length <= 200 &&
+    x.items.every((it) => isObj(it) && isStr(it.title) && isStr(it.artist) && isBool(it.current))
+  );
+}
+
 function isCommand(x: unknown): x is Command {
   if (!isObj(x) || !isStr(x.op)) return false;
   switch (x.op) {
@@ -106,6 +132,10 @@ function isCommand(x: unknown): x is Command {
       return isNum(x.time);
     case 'volume':
       return isNum(x.value);
+    case 'playIndex':
+      return Number.isInteger(x.index) && (x.index as number) >= 0;
+    case 'queueWatch':
+      return isBool(x.on);
     default:
       return false;
   }
@@ -123,6 +153,8 @@ export function parseMessage(data: unknown): Message | null {
       return isCommand(data.payload) ? { ns: NS, kind: 'cmd', payload: data.payload } : null;
     case 'spectrum':
       return isSpectrum(data.payload) ? { ns: NS, kind: 'spectrum', payload: data.payload } : null;
+    case 'queue':
+      return isQueue(data.payload) ? { ns: NS, kind: 'queue', payload: data.payload } : null;
     default:
       return null;
   }

@@ -1,25 +1,31 @@
 /*
- * LLamaTubeMusic skin. Original artwork only: no Winamp bitmaps.
- * Colours are tokens on :host so a future skin can redefine them, or
- * swap the backgrounds for sprite-sheet positions.
+ * LLamaTubeMusic skin. Original artwork and CSS only: no Winamp bitmaps.
+ * Look and feel are inspired by the classic 2.x main window: grey bevelled
+ * chrome, green LCD digits, and a green-on-black track list.
+ * Every colour is a token on :host, so another skin can redefine them.
  */
 :host {
-  --llamatubemusic-face: #2b2c31;
-  --llamatubemusic-face-hi: #4a4c55;
-  --llamatubemusic-face-lo: #17181c;
-  --llamatubemusic-bevel-hi: #6b6e79;
-  --llamatubemusic-bevel-lo: #0b0b0d;
-  --llamatubemusic-lcd-bg: #07100a;
-  --llamatubemusic-lcd-fg: #58f07a;
-  --llamatubemusic-lcd-dim: #1d3a25;
-  --llamatubemusic-accent: #8fd4ff;
-  --llamatubemusic-text: #c9ccd6;
+  --llt-face: #3a3d48;
+  --llt-face-hi: #5b5f6e;
+  --llt-face-lo: #22242b;
+  --llt-bevel-hi: #8a8fa0;
+  --llt-bevel-lo: #0a0b0e;
+  --llt-well: #050805;
+  --llt-lcd: #3dff5a;
+  --llt-lcd-dim: #163a1e;
+  --llt-lcd-glow: rgba(61, 255, 90, 0.55);
+  --llt-title-a: #2e3b55;
+  --llt-title-b: #141a28;
+  --llt-title-text: #cfe9ff;
+  --llt-text: #d6d9e3;
+  --llt-muted: #7fa58c;
+  --llt-accent: #9fe3ff;
 
   all: initial;
   position: fixed;
   z-index: 2147483000;
   font-family: system-ui, sans-serif;
-  color: var(--llamatubemusic-text);
+  color: var(--llt-text);
   user-select: none;
 }
 
@@ -27,17 +33,24 @@
   box-sizing: border-box;
 }
 
+/* ---- Window frame ---- */
 .win {
   position: relative;
+  z-index: 1;
   width: 275px;
   height: 116px;
-  padding: 0;
-  background: linear-gradient(180deg, var(--llamatubemusic-face-hi), var(--llamatubemusic-face) 40%, var(--llamatubemusic-face-lo));
-  border: 1px solid var(--llamatubemusic-bevel-lo);
+  background: linear-gradient(180deg, var(--llt-face-hi), var(--llt-face) 45%, var(--llt-face-lo));
+  border: 1px solid var(--llt-bevel-lo);
   box-shadow:
-    inset 1px 1px 0 var(--llamatubemusic-bevel-hi),
-    inset -1px -1px 0 var(--llamatubemusic-bevel-lo);
+    inset 1px 1px 0 var(--llt-bevel-hi),
+    inset -1px -1px 0 var(--llt-bevel-lo),
+    inset 2px 2px 0 rgba(255, 255, 255, 0.06),
+    inset -2px -2px 0 rgba(0, 0, 0, 0.35);
   overflow: hidden;
+}
+
+.win.expanded {
+  height: calc(116px + 120px);
 }
 
 /* ---- Title bar (also the drag handle) ---- */
@@ -49,29 +62,63 @@
   height: 14px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 0 4px;
-  background: linear-gradient(90deg, #3c3f4a, #1e2028);
+  padding: 0 3px 0 5px;
+  gap: 2px;
+  background:
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.05) 0 1px, transparent 1px 3px),
+    linear-gradient(90deg, var(--llt-title-a), var(--llt-title-b));
+  border-bottom: 1px solid var(--llt-bevel-lo);
   cursor: move;
   touch-action: none;
 }
 
 .title {
+  flex: 1;
   font: 700 9px/1 monospace;
-  letter-spacing: 2px;
-  color: var(--llamatubemusic-accent);
+  letter-spacing: 3px;
+  color: var(--llt-title-text);
+  text-shadow: 0 0 4px rgba(159, 227, 255, 0.45);
+  white-space: nowrap;
 }
 
-.scale {
+/* Small grey buttons shared by the title bar and the playlist toggle. */
+.titlebar button,
+.plbtn {
   font: 700 8px/1 monospace;
-  width: 22px;
   height: 10px;
-  padding: 0;
-  color: var(--llamatubemusic-text);
-  background: var(--llamatubemusic-face);
-  border: 1px solid var(--llamatubemusic-bevel-lo);
-  box-shadow: inset 1px 1px 0 var(--llamatubemusic-bevel-hi);
+  padding: 0 3px;
+  color: var(--llt-text);
+  background: linear-gradient(180deg, var(--llt-face-hi), var(--llt-face-lo));
+  border: 1px solid var(--llt-bevel-lo);
+  box-shadow: inset 1px 1px 0 var(--llt-bevel-hi);
   cursor: pointer;
+}
+
+.titlebar button:active,
+.plbtn:active {
+  box-shadow: inset 1px 1px 0 var(--llt-bevel-lo);
+}
+
+.titlebar button.active,
+.plbtn.active {
+  color: var(--llt-lcd);
+  background: linear-gradient(180deg, var(--llt-lcd-dim), var(--llt-well));
+  text-shadow: 0 0 3px var(--llt-lcd-glow);
+}
+
+.scale,
+.plbtn {
+  width: 22px;
+}
+.hideui {
+  width: 22px;
+}
+.popout {
+  width: 26px;
+}
+.close {
+  width: 14px;
+  font-size: 9px;
 }
 
 /* ---- LCD: time readout and track line ---- */
@@ -84,16 +131,18 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  padding: 0 4px;
-  background: var(--llamatubemusic-lcd-bg);
-  border: 1px solid var(--llamatubemusic-bevel-lo);
+  padding: 0 5px;
+  background: var(--llt-well);
+  border: 1px solid var(--llt-bevel-lo);
+  box-shadow: inset 1px 1px 0 rgba(0, 0, 0, 0.6);
+  cursor: pointer;
 }
 
 .time {
   font: 700 18px/1 monospace;
   letter-spacing: 1px;
-  color: var(--llamatubemusic-lcd-fg);
-  text-shadow: 0 0 4px rgba(88, 240, 122, 0.45);
+  color: var(--llt-lcd);
+  text-shadow: 0 0 5px var(--llt-lcd-glow);
 }
 
 .track {
@@ -103,174 +152,13 @@
   width: 259px;
   height: 12px;
   overflow: hidden;
-  background: var(--llamatubemusic-lcd-bg);
-  border: 1px solid var(--llamatubemusic-bevel-lo);
-  font: 9px/10px monospace;
-  color: var(--llamatubemusic-lcd-fg);
+  background: var(--llt-well);
+  border: 1px solid var(--llt-bevel-lo);
   padding: 0 3px;
+  font: 700 9px/10px monospace;
+  color: var(--llt-lcd);
+  text-shadow: 0 0 3px rgba(61, 255, 90, 0.4);
   white-space: nowrap;
-}
-
-/* ---- Spectrum placeholder (Phase 4 replaces it) ---- */
-.spectrum {
-  position: absolute;
-  left: 112px;
-  top: 20px;
-  width: 155px;
-  height: 22px;
-  display: flex;
-  align-items: flex-end;
-  gap: 1px;
-  padding: 2px;
-  background: var(--llamatubemusic-lcd-bg);
-  border: 1px solid var(--llamatubemusic-bevel-lo);
-}
-
-.spectrum i {
-  flex: 1;
-  background: linear-gradient(0deg, #2fbf57, #e8e04a 70%, #ff5a5a);
-}
-
-/* ---- Transport buttons, drawn with CSS ---- */
-.transport {
-  position: absolute;
-  left: 8px;
-  top: 62px;
-  display: flex;
-  gap: 2px;
-}
-
-.btn {
-  position: relative;
-  width: 24px;
-  height: 18px;
-  padding: 0;
-  background: linear-gradient(180deg, var(--llamatubemusic-face-hi), var(--llamatubemusic-face-lo));
-  border: 1px solid var(--llamatubemusic-bevel-lo);
-  box-shadow: inset 1px 1px 0 var(--llamatubemusic-bevel-hi);
-  cursor: pointer;
-}
-
-.btn:active {
-  background: var(--llamatubemusic-face-lo);
-  box-shadow: inset 1px 1px 0 var(--llamatubemusic-bevel-lo);
-}
-
-.btn i {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: 0;
-  height: 0;
-}
-
-.prev i {
-  border-style: solid;
-  border-width: 4px 5px 4px 0;
-  border-color: transparent var(--llamatubemusic-text) transparent transparent;
-  margin-left: -2px;
-}
-
-.play i {
-  border-style: solid;
-  border-width: 4px 0 4px 7px;
-  border-color: transparent transparent transparent var(--llamatubemusic-accent);
-  margin-left: 1px;
-}
-
-.pause i {
-  width: 6px;
-  height: 7px;
-  border-left: 2px solid var(--llamatubemusic-text);
-  border-right: 2px solid var(--llamatubemusic-text);
-  box-sizing: content-box;
-}
-
-.stop i {
-  width: 7px;
-  height: 7px;
-  background: var(--llamatubemusic-text);
-}
-
-.next i {
-  border-style: solid;
-  border-width: 4px 0 4px 5px;
-  border-color: transparent transparent transparent var(--llamatubemusic-text);
-  margin-left: 2px;
-}
-
-/* ---- Seek and volume sliders (static in Phase 2) ---- */
-.seek,
-.volume {
-  position: absolute;
-  height: 6px;
-  background: var(--llamatubemusic-lcd-bg);
-  border: 1px solid var(--llamatubemusic-bevel-lo);
-}
-
-.seek {
-  left: 8px;
-  top: 88px;
-  width: 259px;
-}
-
-.volume {
-  left: 146px;
-  top: 66px;
-  width: 121px;
-  height: 6px;
-}
-
-.fill {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  background: linear-gradient(90deg, #2f7d4a, var(--llamatubemusic-lcd-fg));
-}
-
-.seek .fill {
-  width: 0;
-}
-
-.volume .fill {
-  width: 100%;
-}
-
-.thumb {
-  position: absolute;
-  top: -4px;
-  width: 6px;
-  height: 12px;
-  background: linear-gradient(180deg, var(--llamatubemusic-face-hi), var(--llamatubemusic-face-lo));
-  border: 1px solid var(--llamatubemusic-bevel-lo);
-  box-shadow: inset 1px 1px 0 var(--llamatubemusic-bevel-hi);
-}
-
-.seek .thumb {
-  left: 0;
-}
-
-.volume .thumb {
-  right: 0;
-}
-
-/* ---- Phase 3: interactive states ---- */
-.lcd,
-.seek,
-.volume,
-.btn {
-  cursor: pointer;
-}
-
-.lcd {
-  cursor: pointer;
-}
-
-.btn.active {
-  background: linear-gradient(180deg, var(--llamatubemusic-lcd-dim), var(--llamatubemusic-lcd-bg));
-  box-shadow: inset 1px 1px 0 var(--llamatubemusic-bevel-lo);
 }
 
 .marquee {
@@ -291,61 +179,207 @@
   }
 }
 
+/* ---- Spectrum analyser ---- */
+.spectrum {
+  position: absolute;
+  left: 112px;
+  top: 20px;
+  width: 155px;
+  height: 22px;
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+  padding: 2px;
+  background: var(--llt-well);
+  border: 1px solid var(--llt-bevel-lo);
+}
+
+.spectrum i {
+  flex: 1;
+  background: linear-gradient(0deg, #2fbf57, #d8e84a 65%, #ff5a4a);
+}
+
+.spectrum.silent i {
+  opacity: 0.3;
+}
+
+/* ---- Transport buttons, drawn with CSS ---- */
+.transport {
+  position: absolute;
+  left: 8px;
+  top: 62px;
+  display: flex;
+  gap: 2px;
+}
+
+.btn {
+  position: relative;
+  width: 24px;
+  height: 18px;
+  padding: 0;
+  background: linear-gradient(180deg, var(--llt-face-hi), var(--llt-face-lo));
+  border: 1px solid var(--llt-bevel-lo);
+  box-shadow: inset 1px 1px 0 var(--llt-bevel-hi);
+  cursor: pointer;
+}
+
+.btn:active {
+  background: var(--llt-face-lo);
+  box-shadow: inset 1px 1px 0 var(--llt-bevel-lo);
+}
+
+.btn.active {
+  background: linear-gradient(180deg, var(--llt-lcd-dim), var(--llt-well));
+  box-shadow: inset 1px 1px 0 var(--llt-bevel-lo);
+}
+
+.btn i {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 0;
+  height: 0;
+}
+
+.prev i {
+  border-style: solid;
+  border-width: 4px 5px 4px 0;
+  border-color: transparent var(--llt-text) transparent transparent;
+  margin-left: -2px;
+}
+
+.play i {
+  border-style: solid;
+  border-width: 4px 0 4px 7px;
+  border-color: transparent transparent transparent var(--llt-lcd);
+  margin-left: 1px;
+}
+
+.pause i {
+  width: 6px;
+  height: 7px;
+  border-left: 2px solid var(--llt-text);
+  border-right: 2px solid var(--llt-text);
+  box-sizing: content-box;
+}
+
+.stop i {
+  width: 7px;
+  height: 7px;
+  background: var(--llt-text);
+}
+
+.next i {
+  border-style: solid;
+  border-width: 4px 0 4px 5px;
+  border-color: transparent transparent transparent var(--llt-text);
+  margin-left: 2px;
+}
+
+/* ---- Seek and volume sliders ---- */
+.seek,
+.volume {
+  position: absolute;
+  height: 6px;
+  background: var(--llt-well);
+  border: 1px solid var(--llt-bevel-lo);
+  box-shadow: inset 1px 1px 0 rgba(0, 0, 0, 0.6);
+  cursor: pointer;
+}
+
+.seek {
+  left: 8px;
+  top: 88px;
+  width: 259px;
+}
+
+.volume {
+  left: 146px;
+  top: 66px;
+  width: 121px;
+}
+
+.fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+}
+
+.seek .fill {
+  width: 0;
+  background: linear-gradient(90deg, #1f7a36, var(--llt-lcd));
+}
+
+.volume .fill {
+  width: 100%;
+  background: linear-gradient(90deg, #1f7a36, var(--llt-lcd) 70%, #d8e84a);
+}
+
+.thumb {
+  position: absolute;
+  top: -4px;
+  width: 5px;
+  height: 12px;
+  background: linear-gradient(180deg, var(--llt-face-hi), var(--llt-face-lo));
+  border: 1px solid var(--llt-bevel-lo);
+  box-shadow: inset 1px 1px 0 var(--llt-bevel-hi);
+}
+
 .seek .thumb,
 .volume .thumb {
   left: 0;
   right: auto;
 }
 
-/* ---- Phase 4: spectrum states ---- */
-.spectrum.silent i {
-  opacity: 0.3;
+/* ---- Up-next playlist panel, below the window ---- */
+.playlist {
+  position: absolute;
+  left: 0;
+  top: 116px;
+  width: 275px;
+  height: 120px;
+  display: none;
+  overflow-y: auto;
+  padding: 3px 5px;
+  background: var(--llt-well);
+  border-top: 2px solid var(--llt-bevel-lo);
+  font: 9px/12px monospace;
+  color: var(--llt-lcd);
+  text-shadow: 0 0 2px rgba(61, 255, 90, 0.3);
 }
 
-/* ---- Pop-out button ---- */
-.popout {
-  font: 700 8px/1 monospace;
-  width: 26px;
-  height: 10px;
-  padding: 0;
-  margin-right: 3px;
-  color: var(--ytamp-text);
-  background: var(--ytamp-face);
-  border: 1px solid var(--ytamp-bevel-lo);
-  box-shadow: inset 1px 1px 0 var(--ytamp-bevel-hi);
+.win.expanded .playlist {
+  display: block;
+}
+
+.pl-row {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 2px;
   cursor: pointer;
 }
 
-.popout.active {
-  color: var(--ytamp-lcd-fg);
-  background: var(--ytamp-lcd-dim);
+.pl-row:hover {
+  background: #0d2214;
 }
 
-/* ---- Phase 5: hide-YTM-UI mode and show/hide ---- */
-.hideui {
-  font: 700 8px/1 monospace;
-  width: 22px;
-  height: 10px;
-  padding: 0;
-  margin-left: auto;
-  margin-right: 3px;
-  color: var(--ytamp-text);
-  background: var(--ytamp-face);
-  border: 1px solid var(--ytamp-bevel-lo);
-  box-shadow: inset 1px 1px 0 var(--ytamp-bevel-hi);
-  cursor: pointer;
+.pl-row.current {
+  color: #ffffff;
+  font-weight: 700;
+  background: var(--llt-lcd-dim);
+  text-shadow: none;
 }
 
-.hideui.active {
-  color: var(--ytamp-lcd-fg);
-  background: var(--ytamp-lcd-dim);
+.pl-empty {
+  white-space: normal;
+  color: var(--llt-muted);
+  padding: 4px 2px;
 }
 
-.win {
-  z-index: 1;
-}
-
-/* Full-page cover for hide-UI mode. The window sits above it, and playback continues. */
+/* ---- Hide-YTM-UI cover, behind the window ---- */
 .veil {
   position: fixed;
   inset: 0;
