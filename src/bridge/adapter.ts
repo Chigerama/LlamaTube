@@ -212,19 +212,13 @@ export function readQueue(): QueueSnapshot {
 }
 
 /**
- * Plays the queue row at `index`. Prefers the player's loadVideoById with the row's
- * video ID, which is exact even when two rows share a title. Falls back to a press
- * on the row's play button if the player doesn't offer it.
+ * Plays the queue row at `index` by pressing its play button, the way YouTube Music starts
+ * a song itself. loadVideoById plays the video, but leaves YouTube Music's own interface on the
+ * old song. Falls back to the title, then the row, if the button is missing.
  */
 export function playQueueIndex(index: number): boolean {
   const row = queueRows()[index];
   if (!row) return false;
-  const player = findPlayer() as (PlayerApi & { loadVideoById?: (id: string) => void }) | null;
-  const videoId = (row as unknown as { data?: { videoId?: unknown } }).data?.videoId;
-  if (player?.loadVideoById && typeof videoId === 'string') {
-    player.loadVideoById(videoId);
-    return true;
-  }
   pressElement(row.querySelector<HTMLElement>(QUEUE.play) ?? row.querySelector<HTMLElement>(QUEUE.title) ?? row);
   return true;
 }
