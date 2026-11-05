@@ -417,7 +417,7 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
   // Some songs have only an audio stream. YouTube Music's Video mode switches to the video at
   // the same point, so ask for it, then return to the position once the video is showing.
   const SWITCH_TIMEOUT_MS = 6000;
-  let switchPending: { time: number; key: string; timer: number } | null = null;
+  let switchPending: { time: number; key: string; src: string; timer: number } | null = null;
 
   /** Identifies the song playing, so a request is only honoured for the song it was made for. */
   const songKey = (): string => {
@@ -440,12 +440,16 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
     const source = document.querySelector<Capturable>('video');
     if (!source || source.videoWidth === 0) {
       // A request made for a different song is stale: drop it, and ask again for this one.
-      if (switchPending && switchPending.key !== songKey()) clearSwitch();
+      // Drop it if the song or the audio source has changed, so the new one gets its own request.
+      if (switchPending && (switchPending.key !== songKey() || switchPending.src !== (source?.currentSrc ?? ''))) {
+        clearSwitch();
+      }
       // No video stream yet. Ask YouTube Music for Video mode, once per song.
       if (source && !switchPending) {
         switchPending = {
           time: source.currentTime,
           key: songKey(),
+          src: source.currentSrc,
           timer: window.setTimeout(giveUpSwitch, SWITCH_TIMEOUT_MS),
         };
         send({ op: 'videoMode' });
