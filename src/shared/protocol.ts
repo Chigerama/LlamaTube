@@ -30,6 +30,12 @@ export interface PlaybackState {
   track: TrackInfo | null;
 }
 
+/** One visualiser frame: 32 frequency bins (0..255). `silent` means the analyser read all zeros. */
+export interface SpectrumFrame {
+  bins: number[];
+  silent: boolean;
+}
+
 export type Command =
   | { op: 'play' }
   | { op: 'pause' }
@@ -43,7 +49,8 @@ export type Command =
 export type Message =
   | { ns: typeof NS; kind: 'hello' }
   | { ns: typeof NS; kind: 'state'; payload: PlaybackState }
-  | { ns: typeof NS; kind: 'cmd'; payload: Command };
+  | { ns: typeof NS; kind: 'cmd'; payload: Command }
+  | { ns: typeof NS; kind: 'spectrum'; payload: SpectrumFrame };
 
 const isObj = (x: unknown): x is Record<string, unknown> =>
   typeof x === 'object' && x !== null;
@@ -71,6 +78,17 @@ function isState(x: unknown): x is PlaybackState {
     isNum(x.volume) &&
     isBool(x.muted) &&
     (x.track === null || isTrack(x.track))
+  );
+}
+
+function isSpectrum(x: unknown): x is SpectrumFrame {
+  return (
+    isObj(x) &&
+    Array.isArray(x.bins) &&
+    x.bins.length >= 1 &&
+    x.bins.length <= 64 &&
+    x.bins.every((v) => Number.isInteger(v) && (v as number) >= 0 && (v as number) <= 255) &&
+    isBool(x.silent)
   );
 }
 
@@ -103,6 +121,8 @@ export function parseMessage(data: unknown): Message | null {
       return isState(data.payload) ? { ns: NS, kind: 'state', payload: data.payload } : null;
     case 'cmd':
       return isCommand(data.payload) ? { ns: NS, kind: 'cmd', payload: data.payload } : null;
+    case 'spectrum':
+      return isSpectrum(data.payload) ? { ns: NS, kind: 'spectrum', payload: data.payload } : null;
     default:
       return null;
   }
