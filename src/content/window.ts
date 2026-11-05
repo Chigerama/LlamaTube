@@ -30,6 +30,7 @@ type Send = (cmd: Command) => void;
 const TEMPLATE = `
   <div class="titlebar" part="titlebar">
     <span class="title">LLAMATUBEMUSIC</span>
+    <button class="popout" type="button" title="Pop out into a separate window">PIP</button>
     <button class="hideui" type="button" title="Hide YouTube Music behind the window">UI</button>
     <button class="scale" type="button" title="Toggle 2x size">2x</button>
   </div>
@@ -130,6 +131,7 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
 
   const applyVisibility = (): void => {
     host.style.display = settings.visible ? '' : 'none';
+    win.style.display = settings.visible ? '' : 'none';
     veil.classList.toggle('on', settings.visible && settings.hideUi);
     win.querySelector('.hideui')?.classList.toggle('active', settings.hideUi);
   };
@@ -166,6 +168,50 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
     });
     frame = active ? requestAnimationFrame(animate) : null;
   };
+
+  // ---- Pop out into a separate always-on-top window (Document Picture-in-Picture) ----
+  // The window element is moved, not copied, so its listeners and the live UI
+  // references keep working. Closing the popped window puts it back in the page.
+  type PipApi = { requestWindow(options: { width: number; height: number }): Promise<Window> };
+  const pipApi = (window as unknown as { documentPictureInPicture?: PipApi }).documentPictureInPicture;
+  const popBtn = win.querySelector<HTMLButtonElement>('.popout');
+  let pipWin: Window | null = null;
+
+  const popOut = async (): Promise<void> => {
+    if (pipWin) {
+      pipWin.close();
+      return;
+    }
+    if (!pipApi) {
+      console.warn('[LLamaTubeMusic] Picture-in-Picture is not available in this browser.');
+      return;
+    }
+    const pip = await pipApi.requestWindow({ width: BASE_W * settings.scale, height: BASE_H * settings.scale });
+    const doc = pip.document;
+    doc.body.style.cssText = 'margin:0;background:#000;overflow:hidden';
+    const pipHost = doc.createElement('div');
+    doc.body.append(pipHost);
+    const pipShadow = pipHost.attachShadow({ mode: 'open' });
+    const pipStyle = doc.createElement('style');
+    pipStyle.textContent = css;
+    pipShadow.append(pipStyle, win);
+    win.style.zoom = String(settings.scale);
+    host.dataset.popped = 'true';
+    popBtn?.classList.add('active');
+    pipWin = pip;
+    pip.addEventListener('pagehide', () => {
+      shadow.append(win);
+      win.style.zoom = String(settings.scale);
+      delete host.dataset.popped;
+      popBtn?.classList.remove('active');
+      pipWin = null;
+    });
+  };
+  popBtn?.addEventListener('click', () => {
+    void popOut();
+  });
+  // Closing the YouTube Music tab also closes the popped window, since the bridge is gone.
+  window.addEventListener('pagehide', () => pipWin?.close());
 
   return {
     toggleVisible(): void {
@@ -215,6 +261,7 @@ function wireDrag(host: HTMLElement, handle: HTMLElement, settings: Settings): v
   handle.addEventListener('pointerdown', (e: PointerEvent) => {
     if (e.button !== 0) return;
     if ((e.target as HTMLElement).closest('button')) return;
+    if (host.dataset.popped) return;
     dragging = true;
     const rect = host.getBoundingClientRect();
     offsetX = e.clientX - rect.left;
@@ -250,6 +297,7 @@ function wireDrag(host: HTMLElement, handle: HTMLElement, settings: Settings): v
 
 function wireScale(host: HTMLElement, win: HTMLElement, settings: Settings): void {
   win.querySelector<HTMLButtonElement>('.scale')?.addEventListener('click', () => {
+    if (host.dataset.popped) return;
     const next: 1 | 2 = settings.scale === 1 ? 2 : 1;
     settings.scale = next;
     win.style.zoom = String(next);

@@ -302,6 +302,25 @@
   opacity: 0.3;
 }
 
+/* ---- Pop-out button ---- */
+.popout {
+  font: 700 8px/1 monospace;
+  width: 26px;
+  height: 10px;
+  padding: 0;
+  margin-right: 3px;
+  color: var(--ytamp-text);
+  background: var(--ytamp-face);
+  border: 1px solid var(--ytamp-bevel-lo);
+  box-shadow: inset 1px 1px 0 var(--ytamp-bevel-hi);
+  cursor: pointer;
+}
+
+.popout.active {
+  color: var(--ytamp-lcd-fg);
+  background: var(--ytamp-lcd-dim);
+}
+
 /* ---- Phase 5: hide-YTM-UI mode and show/hide ---- */
 .hideui {
   font: 700 8px/1 monospace;
