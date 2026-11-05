@@ -207,6 +207,8 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
     doc.title = 'LLamaTubeMusic';
     doc.body.style.cssText = 'margin:0;background:#000;overflow:hidden';
     const pipHost = doc.createElement('div');
+    // Pin the content to the top-left corner, so it fills the window with no offset.
+    pipHost.style.cssText = 'position:fixed;left:0;top:0;margin:0;padding:0';
     doc.body.append(pipHost);
     const pipShadow = pipHost.attachShadow({ mode: 'open' });
     const pipStyle = doc.createElement('style');
@@ -216,6 +218,13 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
     host.dataset.popped = 'true';
     popBtn?.classList.add('active');
     pipWin = pip;
+    // Resizing needs a user activation, which a freshly opened window may not have yet.
+    // requestWindow already asked for the content size, so only correct it when the browser allows.
+    try {
+      fitPipContent(pip, BASE_W * settings.scale, contentHeight() * settings.scale);
+    } catch {
+      console.warn('[LLamaTubeMusic] The popped-out window opened at the browser\'s size.');
+    }
     pip.addEventListener('resize', () => onPipResized(pip));
     pip.addEventListener('pagehide', () => {
       shadow.append(win);
