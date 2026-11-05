@@ -61,7 +61,16 @@ export function findPlayer(): PlayerApi | null {
   return null;
 }
 
+/** The track YouTube Music shows in its own bar. This is what the user sees, so it comes first. */
+function barTrack(): { title: string; artist: string } | null {
+  const title = text(SEL.titleDom);
+  if (!title) return null;
+  return { title: clip(title), artist: clip(text(SEL.artistDom)) };
+}
+
 function readTrack(): TrackInfo | null {
+  const bar = barTrack();
+  if (bar) return { title: bar.title, artist: bar.artist, album: '', artwork: null };
   const md = navigator.mediaSession?.metadata;
   if (md && md.title) {
     const art = md.artwork.length ? md.artwork[md.artwork.length - 1].src : null;
@@ -72,9 +81,7 @@ function readTrack(): TrackInfo | null {
       artwork: art,
     };
   }
-  const title = text(SEL.titleDom);
-  if (!title) return null;
-  return { title: clip(title), artist: clip(text(SEL.artistDom)), album: '', artwork: null };
+  return null;
 }
 
 export function isPlaying(): boolean {
@@ -138,11 +145,13 @@ export function runCommand(cmd: Command): boolean {
       player.seekTo(0, true);
       return true;
     case 'next':
+      if (pressSelector(SEL.next)) return true;
       if (player?.nextVideo) return player.nextVideo(), true;
-      return click(SEL.next);
+      return false;
     case 'prev':
+      if (pressSelector(SEL.prev)) return true;
       if (player?.previousVideo) return player.previousVideo(), true;
-      return click(SEL.prev);
+      return false;
     case 'seek':
       if (!player?.seekTo) return false;
       player.seekTo(Math.max(0, cmd.time), true);
@@ -198,15 +207,22 @@ export function readQueue(): QueueSnapshot {
   const rows = queueRows();
   if (rows.length === 0) return { available: false, items: [] };
   const playingId = currentVideoId();
+  const bar = barTrack();
+  // The row matches the bar when its title and artist both do.
+  const barMatch = (row: HTMLElement): boolean | null => {
+    if (!bar) return null;
+    const title = clip(row.querySelector(QUEUE.title)?.textContent?.trim() ?? '');
+    const artist = clip(row.querySelector(QUEUE.byline)?.textContent?.trim() ?? '');
+    return title === bar.title && artist === bar.artist;
+  };
   const items = rows.slice(0, 200).map((row) => ({
     title: clip(row.querySelector(QUEUE.title)?.textContent?.trim() ?? ''),
     artist: clip(row.querySelector(QUEUE.byline)?.textContent?.trim() ?? ''),
     // Match by video ID when both sides have one. The "selected" attribute can point at a
     // different row than the one playing, so it is only a fallback.
-    current:
-      playingId !== null && rowVideoId(row) !== null
-        ? rowVideoId(row) === playingId
-        : row.hasAttribute('selected') || row.classList.contains('selected'),
+    current: barMatch(row) ?? (playingId !== null && rowVideoId(row) !== null
+      ? rowVideoId(row) === playingId
+      : row.hasAttribute('selected') || row.classList.contains('selected')),
   }));
   return { available: true, items };
 }
@@ -245,5 +261,13 @@ export function clickVideoMode(): boolean {
   if (!button) return false;
   // Full press, like a tap: a plain click() does not trigger YouTube Music's handlers.
   pressElement(button);
+  return true;
+}
+
+/** Presses YouTube Music's own button for a selector. Returns false if the button is missing. */
+function pressSelector(selector: string): boolean {
+  const el = document.querySelector<HTMLElement>(selector);
+  if (!el) return false;
+  pressElement(el);
   return true;
 }
