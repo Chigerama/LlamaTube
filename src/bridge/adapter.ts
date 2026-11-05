@@ -151,6 +151,8 @@ export function runCommand(cmd: Command): boolean {
       return playQueueIndex(cmd.index);
     case 'queueWatch':
       return true; // handled by the bridge, which owns the watch timer
+    case 'videoMode':
+      return clickVideoMode();
     case 'volume':
       if (!player?.setVolume) return false;
       player.setVolume(clamp(Math.round(cmd.value), 0, 100));
@@ -238,4 +240,15 @@ function pressElement(el: HTMLElement): void {
   el.dispatchEvent(new PointerEvent('pointerup', { ...init, pointerId: 1, pointerType: 'mouse' }));
   el.dispatchEvent(new MouseEvent('mouseup', init));
   el.dispatchEvent(new MouseEvent('click', init));
+}
+
+// ---- Song / Video mode ----
+const VIDEO_MODE = 'ytmusic-av-toggle .video-button';
+
+/** Clicks YouTube Music's own Video button. It switches to the video stream at the same point. */
+export function clickVideoMode(): boolean {
+  const button = document.querySelector<HTMLElement>(VIDEO_MODE);
+  if (!button) return false;
+  button.click();
+  return true;
 }
