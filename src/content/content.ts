@@ -74,6 +74,14 @@ if (!window.__llamatubemusicContent) {
     handle?.update(msg.payload);
   });
 
+  // Toolbar button and keyboard shortcut arrive here from the background worker.
+  // Guarded so the bundle also runs in a plain page, as in the test harness.
+  if (typeof chrome !== 'undefined' && chrome.runtime?.onMessage) {
+    chrome.runtime.onMessage.addListener((msg: unknown) => {
+      if ((msg as { type?: string } | null)?.type === 'llamatubemusic:toggle') handle?.toggleVisible();
+    });
+  }
+
   post({ ns: NS, kind: 'hello' });
   console.log('[LLamaTubeMusic] content script loaded (Phase 3: controls wired)');
 }

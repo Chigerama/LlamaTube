@@ -13,3 +13,4 @@ const common = {
 
 await esbuild.build({ ...common, entryPoints: ['src/bridge/bridge.ts'], outfile: 'dist/bridge.js' });
 await esbuild.build({ ...common, entryPoints: ['src/content/content.ts'], outfile: 'dist/content.js' });
+await esbuild.build({ ...common, entryPoints: ['src/background.ts'], outfile: 'dist/background.js' });

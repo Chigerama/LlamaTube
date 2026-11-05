@@ -5,10 +5,14 @@ export interface Settings {
   /** Window top edge, in viewport CSS pixels. */
   y: number;
   scale: 1 | 2;
+  /** Whether the window is shown. Toggled from the toolbar or the shortcut. */
+  visible: boolean;
+  /** Hide-YTM-UI mode: a dark cover sits behind the window. */
+  hideUi: boolean;
 }
 
 const KEY = 'llamatubemusic.settings';
-const DEFAULTS: Settings = { x: 24, y: 24, scale: 1 };
+const DEFAULTS: Settings = { x: 24, y: 24, scale: 1, visible: true, hideUi: false };
 
 function sanitize(raw: unknown): Partial<Settings> {
   if (typeof raw !== 'object' || raw === null) return {};
@@ -17,6 +21,8 @@ function sanitize(raw: unknown): Partial<Settings> {
   if (typeof r.x === 'number' && Number.isFinite(r.x)) out.x = r.x;
   if (typeof r.y === 'number' && Number.isFinite(r.y)) out.y = r.y;
   if (r.scale === 1 || r.scale === 2) out.scale = r.scale;
+  if (typeof r.visible === 'boolean') out.visible = r.visible;
+  if (typeof r.hideUi === 'boolean') out.hideUi = r.hideUi;
   return out;
 }
 
