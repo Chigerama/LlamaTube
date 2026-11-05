@@ -296,3 +296,8 @@
   left: 0;
   right: auto;
 }
+
+/* ---- Phase 4: spectrum states ---- */
+.spectrum.silent i {
+  opacity: 0.3;
+}

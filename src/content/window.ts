@@ -19,6 +19,8 @@ const VOLUME_THROTTLE_MS = 60;
 
 export interface WindowHandle {
   update(state: PlaybackState): void;
+  /** Sets the spectrum targets. The bars ease toward them every animation frame. */
+  spectrum(bins: number[], silent: boolean): void;
 }
 
 type Send = (cmd: Command) => void;
@@ -53,6 +55,7 @@ interface Ui {
   trackBox: HTMLElement;
   play: HTMLElement;
   seek: HTMLElement;
+  spectrum: HTMLElement;
   volume: HTMLElement;
 }
 
@@ -110,6 +113,7 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
     trackBox: q('.track'),
     play: q('.btn.play'),
     seek: q('.seek'),
+    spectrum: q('.spectrum'),
     volume: q('.volume'),
   };
 
@@ -128,7 +132,37 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
     if (latest) renderTime(ui, latest, remaining.get(), seek.preview());
   });
 
+  const bars = Array.from(ui.spectrum.querySelectorAll<HTMLElement>('i'));
+  const targets = new Array<number>(bars.length).fill(0);
+  const levels = new Array<number>(bars.length).fill(0);
+  let frame: number | null = null;
+
+  /** Eases each bar toward its target: instant rise, slow fall. */
+  const animate = (): void => {
+    let active = false;
+    bars.forEach((bar, i) => {
+      const t = targets[i];
+      levels[i] = t >= levels[i] ? t : Math.max(t, levels[i] * 0.86);
+      if (levels[i] > 0.005) active = true;
+      bar.style.height = `${Math.max(4, Math.round(levels[i] * 100))}%`;
+    });
+    frame = active ? requestAnimationFrame(animate) : null;
+  };
+
   return {
+    spectrum(bins: number[], silent: boolean): void {
+      const per = bins.length / bars.length;
+      for (let i = 0; i < bars.length; i++) {
+        const from = Math.floor(i * per);
+        const to = Math.max(from + 1, Math.floor((i + 1) * per));
+        let sum = 0;
+        for (let j = from; j < to; j++) sum += bins[j];
+        targets[i] = sum / (to - from) / 255;
+      }
+      ui.spectrum.classList.toggle('silent', silent);
+      ui.spectrum.title = silent ? 'No audio signal' : '';
+      if (frame === null) frame = requestAnimationFrame(animate);
+    },
     update(state: PlaybackState): void {
       latest = state;
       lastDuration = state.duration;

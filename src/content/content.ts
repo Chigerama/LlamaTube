@@ -65,6 +65,10 @@ if (!window.__llamatubemusicContent) {
   window.addEventListener('message', (e: MessageEvent) => {
     if (e.source !== window) return;
     const msg = parseMessage(e.data);
+    if (msg?.kind === 'spectrum') {
+      handle?.spectrum(msg.payload.bins, msg.payload.silent);
+      return;
+    }
     if (msg?.kind !== 'state') return;
     latest = msg.payload;
     handle?.update(msg.payload);
