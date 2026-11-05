@@ -147,7 +147,7 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
 
   const applyVisibility = (): void => {
     host.style.display = settings.visible ? '' : 'none';
-    win.style.display = settings.visible ? '' : 'none';
+    win.style.display = settings.visible && !win.dataset.fs ? '' : 'none';
     veil.classList.toggle('on', settings.visible && settings.hideUi);
     win.querySelector('.hideui')?.classList.toggle('active', settings.hideUi);
   };
@@ -207,6 +207,8 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
     doc.title = 'LLamaTubeMusic';
     doc.body.style.cssText = 'margin:0;background:#000;overflow:hidden';
     const pipHost = doc.createElement('div');
+    // Pin the content to the top-left corner, so it fills the window with no offset.
+    pipHost.style.cssText = 'position:fixed;left:0;top:0;margin:0;padding:0';
     doc.body.append(pipHost);
     const pipShadow = pipHost.attachShadow({ mode: 'open' });
     const pipStyle = doc.createElement('style');
@@ -216,6 +218,13 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
     host.dataset.popped = 'true';
     popBtn?.classList.add('active');
     pipWin = pip;
+    // Resizing needs a user activation, which a freshly opened window may not have yet.
+    // requestWindow already asked for the content size, so only correct it when the browser allows.
+    try {
+      fitPipContent(pip, BASE_W * settings.scale, contentHeight() * settings.scale);
+    } catch {
+      console.warn('[LLamaTubeMusic] The popped-out window opened at the browser\'s size.');
+    }
     pip.addEventListener('resize', () => onPipResized(pip));
     pip.addEventListener('pagehide', () => {
       shadow.append(win);
@@ -439,9 +448,24 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
   const fsOverlay = shadow.querySelector<HTMLElement>('.fsview')!;
   const fsMirror = fsView.querySelector<HTMLVideoElement>('.fs-mirror')!;
 
+  // Set while the fullscreen view is on, so the popped-out window can be restored afterwards.
+  let wasPopped = false;
+
   const setFullscreenView = (on: boolean): void => {
     if (on && !videoOpen) setVideoOpen(true);
     fullscreenView = on;
+    // The window hides during fullscreen, in the page or popped out, so nothing sits over the video.
+    win.dataset.fs = on ? '1' : '';
+    applyVisibility();
+    if (on && pipWin) {
+      // A popped-out window stays on top of fullscreen, so close it and remember to reopen it.
+      wasPopped = true;
+      pipWin.close();
+    } else if (!on && wasPopped) {
+      wasPopped = false;
+      // Reopening needs a click. Escape can't reopen it, so the window stays in the page then.
+      popOut().catch(() => console.warn('[LLamaTubeMusic] Could not reopen the popped-out window.'));
+    }
     fsOverlay.classList.toggle('on', on);
     fsMirror.srcObject = on ? mirror.srcObject : null;
     if (on) void fsMirror.play().catch(() => undefined);
