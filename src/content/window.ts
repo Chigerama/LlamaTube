@@ -509,7 +509,23 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
   // Set while the fullscreen view is on, so the popped-out window can be restored afterwards.
   let wasPopped = false;
 
-  const setFullscreenView = (on: boolean): void => {
+  type WindowReply = { before: string | null; after: string | null };
+
+  /** Asks the background worker for the browser window's state. Resolves to nulls when unavailable. */
+  const askWindow = (want: 'toggle' | 'fullscreen' | 'normal' | 'state'): Promise<WindowReply> => {
+    if (typeof chrome === 'undefined' || !chrome.runtime?.sendMessage) {
+      return Promise.resolve({ before: null, after: null }); // the page-only test harness
+    }
+    return chrome.runtime
+      .sendMessage({ type: 'llamatubemusic:window', want })
+      .catch(() => ({ before: null, after: null }) as WindowReply) as Promise<WindowReply>;
+  };
+
+  /**
+   * Shows or hides the fullscreen view. With syncWindow, the browser window is set to match.
+   * The FS button passes syncWindow false, since it has already asked for the toggle.
+   */
+  const setFullscreenView = (on: boolean, syncWindow = true): void => {
     if (on && !videoOpen) setVideoOpen(true);
     fullscreenView = on;
     // The window hides during fullscreen, in the page or popped out, so nothing sits over the video.
@@ -527,15 +543,30 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
     fsOverlay.classList.toggle('on', on);
     fsMirror.srcObject = on ? mirror.srcObject : null;
     if (on) void fsMirror.play().catch(() => undefined);
-    // Guarded: the page-only test harness has no extension APIs.
-    if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
-      void chrome.runtime
-        .sendMessage({ type: 'llamatubemusic:window-fullscreen', on })
-        .catch(() => undefined);
-    }
+    if (syncWindow) void askWindow(on ? 'fullscreen' : 'normal');
   };
 
-  fsBtn?.addEventListener('click', () => setFullscreenView(!fullscreenView));
+  // The button asks for a toggle of the real window state, and opens or closes the overlay to match.
+  fsBtn?.addEventListener('click', () => {
+    void askWindow('toggle').then((reply) => {
+      setFullscreenView(reply?.before !== "fullscreen", false);
+    });
+  });
+
+  // If the window leaves fullscreen on its own (Chrome's own controls), close the overlay too.
+  let resizeTimer: number | null = null;
+  window.addEventListener('resize', () => {
+    if (!fullscreenView) return;
+    if (resizeTimer !== null) window.clearTimeout(resizeTimer);
+    resizeTimer = window.setTimeout(() => {
+      resizeTimer = null;
+      void askWindow('state').then((reply) => {
+        if (fullscreenView && reply?.before != null && reply.before !== "fullscreen") {
+          setFullscreenView(false, false);
+        }
+      });
+    }, 200);
+  });
   document.addEventListener(
     'keydown',
     (e: KeyboardEvent) => {
