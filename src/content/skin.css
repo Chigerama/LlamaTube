@@ -287,6 +287,14 @@
   margin-left: 2px;
 }
 
+/* Shuffle is a text label, not a glyph: it reads as a mode, and its lit state matches the others. */
+.btn.shuf {
+  margin-left: 6px;
+  font: 700 8px/1 sans-serif;
+  letter-spacing: 0.04em;
+  color: var(--llt-text);
+}
+
 /* ---- Seek and volume sliders ---- */
 .seek,
 .volume {

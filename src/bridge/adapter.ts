@@ -92,6 +92,14 @@ export function isPlaying(): boolean {
   return navigator.mediaSession?.playbackState === 'playing';
 }
 
+// ---- Shuffle ----
+// Verified by probe: YTM sets `shuffle-on` on its player bar while shuffle is on, and removes it when off.
+const SHUFFLE = 'ytmusic-player-bar yt-icon-button.shuffle';
+
+function readShuffle(): boolean {
+  return document.querySelector('ytmusic-player-bar')?.hasAttribute('shuffle-on') ?? false;
+}
+
 export function readState(): PlaybackState {
   const video = findVideo();
   const player = findPlayer();
@@ -116,6 +124,7 @@ export function readState(): PlaybackState {
     duration: Math.max(0, duration),
     volume: clamp(volume, 0, 100),
     muted: video?.muted ?? false,
+    shuffle: readShuffle(),
     track: readTrack(),
   };
 }
@@ -164,6 +173,9 @@ export function runCommand(cmd: Command): boolean {
       return true; // handled by the bridge, which owns the watch timer
     case 'videoMode':
       return clickVideoMode();
+    case 'shuffle':
+      // The inner button is the one YTM listens on; the outer element is the fallback.
+      return pressSelector(`${SHUFFLE} button`) || pressSelector(SHUFFLE);
     case 'volume':
       if (!player?.setVolume) return false;
       player.setVolume(clamp(Math.round(cmd.value), 0, 100));
