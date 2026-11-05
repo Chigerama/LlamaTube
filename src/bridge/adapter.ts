@@ -249,6 +249,7 @@ const VIDEO_MODE = 'ytmusic-av-toggle .video-button';
 export function clickVideoMode(): boolean {
   const button = document.querySelector<HTMLElement>(VIDEO_MODE);
   if (!button) return false;
-  button.click();
+  // Full press, like a tap: a plain click() does not trigger YouTube Music's handlers.
+  pressElement(button);
   return true;
 }
