@@ -143,7 +143,15 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
   const settings = await loadSettings();
   applyLayout(host, win, settings);
   wireDrag(host, q('.titlebar'), settings);
-  wireScale(host, win, settings);
+  // A popped-out window is resized to match the new size. The click gives the activation that resizing needs.
+  wireScale(host, win, settings, () => {
+    if (!pipWin) return;
+    try {
+      fitPipContent(pipWin, BASE_W * settings.scale, contentHeight() * settings.scale);
+    } catch {
+      console.warn('[LLamaTubeMusic] Could not resize the popped-out window to the new size.');
+    }
+  });
 
   const applyVisibility = (): void => {
     host.style.display = settings.visible ? '' : 'none';
@@ -573,9 +581,8 @@ function wireDrag(host: HTMLElement, handle: HTMLElement, settings: Settings): v
   });
 }
 
-function wireScale(host: HTMLElement, win: HTMLElement, settings: Settings): void {
+function wireScale(host: HTMLElement, win: HTMLElement, settings: Settings, onChange: () => void): void {
   win.querySelector<HTMLButtonElement>('.scale')?.addEventListener('click', () => {
-    if (host.dataset.popped) return;
     const next: 1 | 2 = settings.scale === 1 ? 2 : 1;
     settings.scale = next;
     win.style.zoom = String(next);
@@ -585,6 +592,7 @@ function wireScale(host: HTMLElement, win: HTMLElement, settings: Settings): voi
     settings.x = pos.x;
     settings.y = pos.y;
     void saveSettings(settings);
+    onChange();
   });
 }
 
