@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "LLamaTubeMusic",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Winamp-style overlay for YouTube Music. Controls YTM playback; it does not replace it.",
   "permissions": ["storage"],
   "background": { "service_worker": "dist/background.js" },
