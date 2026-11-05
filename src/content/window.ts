@@ -14,6 +14,9 @@ const HOST_ID = 'llamatubemusic-host';
 const BASE_W = 275;
 const BASE_H = 116;
 const SPECTRUM_BARS = 14;
+/** Gain on the leftmost (bass) and rightmost (treble) bars. The bars in between are interpolated. */
+const SPECTRUM_TILT_LOW = 0.6;
+const SPECTRUM_TILT_HIGH = 1.5;
 /** Minimum gap between volume commands while dragging, in ms. */
 const VOLUME_THROTTLE_MS = 60;
 
@@ -574,13 +577,16 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
       void saveSettings(settings);
     },
     spectrum(bins: number[], silent: boolean): void {
+      // Bands are already log-spaced. Each bar takes its peak band, then a tilt lifts the
+      // treble: bass carries far more energy in music, so it would otherwise dominate.
       const per = bins.length / bars.length;
       for (let i = 0; i < bars.length; i++) {
         const from = Math.floor(i * per);
         const to = Math.max(from + 1, Math.floor((i + 1) * per));
-        let sum = 0;
-        for (let j = from; j < to; j++) sum += bins[j];
-        targets[i] = sum / (to - from) / 255;
+        let peak = 0;
+        for (let j = from; j < to; j++) peak = Math.max(peak, bins[j]);
+        const tilt = SPECTRUM_TILT_LOW + (SPECTRUM_TILT_HIGH - SPECTRUM_TILT_LOW) * (i / (bars.length - 1));
+        targets[i] = Math.min(1, (peak / 255) * tilt);
       }
       ui.spectrum.classList.toggle('silent', silent);
       ui.spectrum.title = silent ? 'No audio signal' : '';
