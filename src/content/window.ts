@@ -438,6 +438,12 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
 
   const attachMirror = (): void => {
     const source = document.querySelector<Capturable>('video');
+    dlog('attachMirror', {
+      hasSource: !!source,
+      videoWidth: source?.videoWidth ?? null,
+      pending: switchPending ? 'yes' : 'no',
+      key: songKey(),
+    });
     if (!source || source.videoWidth === 0) {
       // A request made for a different song is stale: drop it, and ask again for this one.
       // Drop it if the song or the audio source has changed, so the new one gets its own request.
@@ -452,6 +458,7 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
           src: source.currentSrc,
           timer: window.setTimeout(giveUpSwitch, SWITCH_TIMEOUT_MS),
         };
+        dlog('requesting video mode');
         send({ op: 'videoMode' });
       }
       mirror.hidden = true;
