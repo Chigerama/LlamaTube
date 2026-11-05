@@ -15,7 +15,7 @@ export interface Settings {
 
 const KEY = 'llamatubemusic.settings';
 export const MIN_PL_H = 48;
-export const MAX_PL_H = 300;
+export const MAX_PL_H = 1000;
 const DEFAULTS: Settings = { x: 24, y: 24, scale: 1, visible: true, hideUi: false, plHeight: 120 };
 
 function sanitize(raw: unknown): Partial<Settings> {

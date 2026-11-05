@@ -206,6 +206,7 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
     host.dataset.popped = 'true';
     popBtn?.classList.add('active');
     pipWin = pip;
+    pip.addEventListener('resize', () => onPipResized(pip));
     pip.addEventListener('pagehide', () => {
       shadow.append(win);
       win.style.zoom = String(settings.scale);
@@ -241,7 +242,7 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
     // A popped-out window needs its own height to match. Browsers may refuse the resize.
     if (pipWin) {
       try {
-        pipWin.resizeTo(BASE_W * settings.scale, (BASE_H + (open ? settings.plHeight : 0)) * settings.scale);
+        fitPipContent(pipWin, BASE_W * settings.scale, (BASE_H + (open ? settings.plHeight : 0)) * settings.scale);
       } catch {
         console.warn('[LLamaTubeMusic] Could not resize the popped-out window.');
       }
@@ -281,19 +282,50 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
     });
   };
 
-  // ---- Resizable list: drag the corner grip. Height is remembered. ----
+  // ---- Resizable list: drag the corner grip, or resize the popped-out window. Height is remembered. ----
   const grip = win.querySelector<HTMLElement>('.pl-grip')!;
   win.style.setProperty('--pl-h', `${settings.plHeight}px`);
   let resizing: { startY: number; startH: number } | null = null;
 
-  const applyPlHeight = (h: number): void => {
+  /** Resizes a window so its content area is contentW x contentH. Chrome's frame is added on top. */
+  const fitPipContent = (p: Window, contentW: number, contentH: number): void => {
+    const frameW = p.outerWidth - p.innerWidth;
+    const frameH = p.outerHeight - p.innerHeight;
+    p.resizeTo(contentW + frameW, contentH + frameH);
+  };
+
+  /** Largest list height that fits. A popped-out window is sized by the user, so it is capped only by MAX_PL_H. */
+  const maxPlHeight = (): number => {
+    if (pipWin) return MAX_PL_H;
+    const hostTop = host.getBoundingClientRect().top;
+    return Math.min(MAX_PL_H, (window.innerHeight - hostTop) / settings.scale - BASE_H);
+  };
+
+  const setPlHeight = (h: number): void => {
     settings.plHeight = h;
     win.style.setProperty('--pl-h', `${h}px`);
-    if (pipWin) {
-      try {
-        pipWin.resizeTo(BASE_W * settings.scale, (BASE_H + h) * settings.scale);
-      } catch {
-        // Browsers may refuse; the list still resizes in the page.
+    if (pipWin) fitPipContent(pipWin, BASE_W * settings.scale, (BASE_H + h) * settings.scale);
+    void saveSettings(settings);
+  };
+
+  /**
+   * Keeps a popped-out window at least as large as its content, and makes the list
+   * fill whatever height the user gives the window.
+   */
+  const onPipResized = (p: Window): void => {
+    const s = settings.scale;
+    const minW = BASE_W * s;
+    const minH = (BASE_H + (playlistOpen ? MIN_PL_H : 0)) * s;
+    if (p.innerWidth < minW - 0.5 || p.innerHeight < minH - 0.5) {
+      fitPipContent(p, Math.max(p.innerWidth, minW), Math.max(p.innerHeight, minH));
+      return;
+    }
+    if (playlistOpen) {
+      const h = Math.round(p.innerHeight / s - BASE_H);
+      if (h !== settings.plHeight) {
+        settings.plHeight = h;
+        win.style.setProperty('--pl-h', `${h}px`);
+        void saveSettings(settings);
       }
     }
   };
@@ -309,21 +341,15 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
     if (!resizing) return;
     // Pointer movement is in viewport pixels; the window is scaled by settings.scale.
     const dy = (e.clientY - resizing.startY) / settings.scale;
-    // Keep the bottom of the window on screen.
-    const hostTop = host.getBoundingClientRect().top;
-    const fitH = (window.innerHeight - hostTop) / settings.scale - BASE_H;
-    const h = Math.round(Math.min(Math.max(resizing.startH + dy, MIN_PL_H), Math.min(MAX_PL_H, fitH)));
+    const h = Math.round(Math.min(Math.max(resizing.startH + dy, MIN_PL_H), maxPlHeight()));
     win.style.setProperty('--pl-h', `${h}px`);
   });
   const finishResize = (e: PointerEvent): void => {
     if (!resizing) return;
     const dy = (e.clientY - resizing.startY) / settings.scale;
-    const hostTop = host.getBoundingClientRect().top;
-    const fitH = (window.innerHeight - hostTop) / settings.scale - BASE_H;
-    const h = Math.round(Math.min(Math.max(resizing.startH + dy, MIN_PL_H), Math.min(MAX_PL_H, fitH)));
+    const h = Math.round(Math.min(Math.max(resizing.startH + dy, MIN_PL_H), maxPlHeight()));
     resizing = null;
-    applyPlHeight(h);
-    void saveSettings(settings);
+    setPlHeight(h);
   };
   grip.addEventListener('pointerup', finishResize);
   grip.addEventListener('pointercancel', () => {
