@@ -143,7 +143,15 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
   const settings = await loadSettings();
   applyLayout(host, win, settings);
   wireDrag(host, q('.titlebar'), settings);
-  wireScale(host, win, settings);
+  // A popped-out window is resized to match the new size. The click gives the activation that resizing needs.
+  wireScale(host, win, settings, () => {
+    if (!pipWin) return;
+    try {
+      fitPipContent(pipWin, BASE_W * settings.scale, contentHeight() * settings.scale);
+    } catch {
+      console.warn('[LLamaTubeMusic] Could not resize the popped-out window to the new size.');
+    }
+  });
 
   const applyVisibility = (): void => {
     host.style.display = settings.visible ? '' : 'none';
@@ -391,11 +399,36 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
 
   type Capturable = HTMLVideoElement & { captureStream?: () => MediaStream };
 
+  // Some songs have only an audio stream. YouTube Music's Video mode switches to the video at
+  // the same point, so ask for it, then return to the position once the video is showing.
+  const SWITCH_TIMEOUT_MS = 6000;
+  let switchPending: { time: number; timer: number } | null = null;
+
+  const giveUpSwitch = (): void => {
+    switchPending = null;
+    vdEmpty.textContent = 'Video is not available for this song.';
+  };
+
   const attachMirror = (): void => {
     const source = document.querySelector<Capturable>('video');
-    if (!source || typeof source.captureStream !== 'function') {
+    if (!source || source.videoWidth === 0) {
+      // No video stream yet. Ask YouTube Music for Video mode, once per request.
+      if (source && !switchPending) {
+        switchPending = {
+          time: source.currentTime,
+          timer: window.setTimeout(giveUpSwitch, SWITCH_TIMEOUT_MS),
+        };
+        send({ op: 'videoMode' });
+      }
       mirror.hidden = true;
       vdEmpty.hidden = false;
+      vdEmpty.textContent = switchPending ? 'Switching to the video...' : 'No video for this song.';
+      return;
+    }
+    if (typeof source.captureStream !== 'function') {
+      mirror.hidden = true;
+      vdEmpty.hidden = false;
+      vdEmpty.textContent = 'Video not available here.';
       return;
     }
     try {
@@ -404,9 +437,17 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
       mirror.hidden = false;
       vdEmpty.hidden = true;
       void mirror.play().catch(() => undefined);
+      if (switchPending) {
+        // Return to the position the song was at, if the switch moved it.
+        const { time, timer } = switchPending;
+        window.clearTimeout(timer);
+        switchPending = null;
+        if (Math.abs(source.currentTime - time) > 1) send({ op: 'seek', time });
+      }
     } catch {
       mirror.hidden = true;
       vdEmpty.hidden = false;
+      vdEmpty.textContent = 'Video not available here.';
     }
   };
 
@@ -420,6 +461,10 @@ export async function mountWindow(send: Send): Promise<WindowHandle | null> {
     } else {
       if (mirror.ownerDocument.fullscreenElement) void mirror.ownerDocument.exitFullscreen();
       if (fullscreenView) setFullscreenView(false);
+      if (switchPending) {
+        window.clearTimeout(switchPending.timer);
+        switchPending = null;
+      }
       mirror.pause();
       mirror.srcObject = null;
     }
@@ -573,9 +618,8 @@ function wireDrag(host: HTMLElement, handle: HTMLElement, settings: Settings): v
   });
 }
 
-function wireScale(host: HTMLElement, win: HTMLElement, settings: Settings): void {
+function wireScale(host: HTMLElement, win: HTMLElement, settings: Settings, onChange: () => void): void {
   win.querySelector<HTMLButtonElement>('.scale')?.addEventListener('click', () => {
-    if (host.dataset.popped) return;
     const next: 1 | 2 = settings.scale === 1 ? 2 : 1;
     settings.scale = next;
     win.style.zoom = String(next);
@@ -585,6 +629,7 @@ function wireScale(host: HTMLElement, win: HTMLElement, settings: Settings): voi
     settings.x = pos.x;
     settings.y = pos.y;
     void saveSettings(settings);
+    onChange();
   });
 }
 

@@ -59,7 +59,8 @@ export type Command =
   | { op: 'seek'; time: number }
   | { op: 'volume'; value: number }
   | { op: 'playIndex'; index: number }
-  | { op: 'queueWatch'; on: boolean };
+  | { op: 'queueWatch'; on: boolean }
+  | { op: 'videoMode' };
 
 export type Message =
   | { ns: typeof NS; kind: 'hello' }
@@ -136,6 +137,8 @@ function isCommand(x: unknown): x is Command {
       return Number.isInteger(x.index) && (x.index as number) >= 0;
     case 'queueWatch':
       return isBool(x.on);
+    case 'videoMode':
+      return true;
     default:
       return false;
   }
