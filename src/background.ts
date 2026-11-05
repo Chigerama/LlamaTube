@@ -17,16 +17,33 @@ function toggleActiveTab(): void {
 
 chrome.action.onClicked.addListener(toggleActiveTab);
 
-// Sets the YTM tab's browser window to fullscreen, or back to normal. The
-// content script asks for this when the video overlay opens or closes.
-chrome.runtime.onMessage.addListener((msg: unknown, sender) => {
-  const m = msg as { type?: string; on?: boolean } | null;
-  if (m?.type !== 'llamatubemusic:window-fullscreen') return;
+// Reads and sets the YTM tab's browser window state. The content script asks with
+// want: 'toggle' | 'fullscreen' | 'normal' | 'state'. It gets back the state before and after.
+chrome.runtime.onMessage.addListener((msg: unknown, sender, sendResponse) => {
+  const m = msg as { type?: string; want?: string } | null;
+  if (m?.type !== 'llamatubemusic:window') return false;
   const windowId = sender.tab?.windowId;
-  if (windowId === undefined) return;
-  void chrome.windows
-    .update(windowId, { state: m.on ? 'fullscreen' : 'normal' })
-    .catch(() => undefined);
+  if (windowId === undefined) {
+    sendResponse({ before: null, after: null });
+    return false;
+  }
+  void (async () => {
+    try {
+      const before = (await chrome.windows.get(windowId)).state ?? null;
+      if (m.want === 'state') {
+        sendResponse({ before, after: before });
+        return;
+      }
+      const want = m.want === 'toggle' ? (before === 'fullscreen' ? 'normal' : 'fullscreen') : m.want;
+      const updated = await chrome.windows.update(windowId, {
+        state: want as chrome.windows.WindowState,
+      });
+      sendResponse({ before, after: updated.state ?? null });
+    } catch {
+      sendResponse({ before: null, after: null });
+    }
+  })();
+  return true; // the response is sent asynchronously
 });
 chrome.commands.onCommand.addListener((command) => {
   if (command === 'toggle-window') toggleActiveTab();
